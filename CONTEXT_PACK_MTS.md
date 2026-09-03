@@ -55,7 +55,10 @@ https://github.com/mac50503/StoryPromptAnalyzer?ysclid=mtlfosoj2j850485263
 9) ReqSpell (SoftSpell)
 Платформа использует NLP и машинное обучение, чтобы анализировать требования. Находит неоднозначные формулировки, выявляет пробелы, а также обнаруживает дубликаты и противоречия между разными частями документа.
 https://www.softspell.ai/blog/ai-requirements-management-reqspell
-10)
+10) QRA QVscribe + ReqWriter
+QVscribe анализирует каждое требование в реальном времени, а ReqWriter предлагает переформулировки. NLP-движок, основанный на правилах INCOSE и нотации EARS, 
+Real-time анализ прямо в процессе написания — не после, а во время
+https://qracorp.com/
 
 
 # Гипотезы (продуктовые + ИИ)
