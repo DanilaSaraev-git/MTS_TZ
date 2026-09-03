@@ -48,9 +48,7 @@ https://allsee.team/services/avtomatizaciya/proverka-po-gostam
 https://globalcio.ru/projects/27936/?ysclid=mtleal201n351619081
 7) GitHub Spec Kit — spec-driven development с маркерами неоднозначности
 ИИ не просто проверяет готовый документ один раз, а работает как непрерывный партнёр на протяжении всего процесса написания спецификации, задавая вопросы и помечая проблемные места. ИИ-агент подключается как "соавтор" и задаёт уточняющие вопросы по мере написания, выявляет edge cases
-8) Intent — AI-ревью спеки с выделенной «персоной»
-Инструмент, который ставит отдельную AI-персону на ревью спецификации до написания кода. Ревью спеки проходит на втором из трёх чекпойнтов (после приоритизации, до финального review
-9) StoryPromptAnalyzer — интеграция с Jira.
+8) StoryPromptAnalyzer — интеграция с Jira.
 Сервис, который конвертирует Jira user stories в структурированные AI-промпты и генерирует отчёты с анализом неоднозначностей и пробелов. Три режима: Single Story (анализ одной истории), Sprint Analysis (консолидированный отчёт), Blaze Rules Context Mode (поиск по кодбазе).
 Вывод: Quick Summary → Ambiguities → Critical Gaps → Risks → Recommendations
 
