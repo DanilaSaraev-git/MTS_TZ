@@ -9,7 +9,7 @@
 ## Как входить в задачу
 
 1. Прочитай [карту базы](README.md) и [рамку продукта](knowledge/product.md).
-2. Для продуктового анализа и экспериментов прочитай [методику](knowledge/methodology.md), [гипотезы](knowledge/hypotheses.md) и [план проверки](knowledge/discovery-plan.md).
+2. Для продуктового анализа и экспериментов прочитай [методику](knowledge/methodology.md), [гипотезы](knowledge/hypotheses-v2.md) и [план проверки](knowledge/discovery-plan.md).
 3. Для работы с кейсом прочитай [контекст MTS](MTS/README.md); для анализа документов также [наблюдения](MTS/document-analysis.md).
 4. Перед изменением направления сверься с [принятыми решениями](knowledge/decisions.md).
 
