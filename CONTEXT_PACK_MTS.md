@@ -59,7 +59,12 @@ https://www.softspell.ai/blog/ai-requirements-management-reqspell
 QVscribe анализирует каждое требование в реальном времени, а ReqWriter предлагает переформулировки. NLP-движок, основанный на правилах INCOSE и нотации EARS, 
 Real-time анализ прямо в процессе написания — не после, а во время
 https://qracorp.com/
-
+11) Mockitt AI Requirements Review
+Три категории проверок:
+Multi-Perspective — сканирование с разных точек зрения: техническая осуществимость, edge cases, пользовательский опыт
+Edge Case Detection — ИИ автоматически задаёт вопросы вида: «Что отобразится при отключении сети? Что если данные пустые?»
+Ambiguity Resolution — находит неквантифицируемые термины и предлагает конвертировать их в измеримые метрики
+https://edge.mockitt.com/en/ad/aireview
 
 # Гипотезы (продуктовые + ИИ)
 
