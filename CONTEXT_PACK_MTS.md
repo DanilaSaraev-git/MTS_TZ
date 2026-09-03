@@ -51,6 +51,11 @@ https://globalcio.ru/projects/27936/?ysclid=mtleal201n351619081
 8) StoryPromptAnalyzer — интеграция с Jira.
 Сервис, который конвертирует Jira user stories в структурированные AI-промпты и генерирует отчёты с анализом неоднозначностей и пробелов. Три режима: Single Story (анализ одной истории), Sprint Analysis (консолидированный отчёт), Blaze Rules Context Mode (поиск по кодбазе).
 Вывод: Quick Summary → Ambiguities → Critical Gaps → Risks → Recommendations
+https://github.com/mac50503/StoryPromptAnalyzer?ysclid=mtlfosoj2j850485263
+9) ReqSpell (SoftSpell)
+Платформа использует NLP и машинное обучение, чтобы анализировать требования. Находит неоднозначные формулировки, выявляет пробелы, а также обнаруживает дубликаты и противоречия между разными частями документа.
+https://www.softspell.ai/blog/ai-requirements-management-reqspell
+10)
 
 
 # Гипотезы (продуктовые + ИИ)
