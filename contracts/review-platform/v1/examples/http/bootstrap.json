@@ -1,0 +1,16 @@
+{
+  "actor": {
+    "id": "10000000-0000-4000-8000-000000000001",
+    "display_name": "Тестовый аналитик"
+  },
+  "workspace": {
+    "id": "20000000-0000-4000-8000-000000000001",
+    "organization_id": "30000000-0000-4000-8000-000000000001",
+    "organization_name": "Example Data Company",
+    "name": "Команда витрин"
+  },
+  "limits": {
+    "document_upload_max_bytes": 52428800,
+    "max_context_documents": 50
+  }
+}
