@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "normalization": "Unicode NFC + whitespace collapse for quote validation only",
+  "parsers": [
+    {
+      "name": "pdfplumber",
+      "version": "0.11.10",
+      "settings": {
+        "text": {
+          "layout": false,
+          "x_tolerance": 3,
+          "y_tolerance": 3
+        },
+        "tables": {
+          "vertical_strategy": "lines",
+          "horizontal_strategy": "lines"
+        }
+      }
+    },
+    {
+      "name": "utf8-text",
+      "version": "1",
+      "settings": {
+        "encoding": "utf-8",
+        "blocks": "blank-lines"
+      }
+    },
+    {
+      "name": "utf8-text",
+      "version": "1",
+      "settings": {
+        "encoding": "utf-8",
+        "blocks": "blank-lines"
+      }
+    },
+    {
+      "name": "utf8-text",
+      "version": "1",
+      "settings": {
+        "encoding": "utf-8",
+        "blocks": "blank-lines"
+      }
+    }
+  ]
+}

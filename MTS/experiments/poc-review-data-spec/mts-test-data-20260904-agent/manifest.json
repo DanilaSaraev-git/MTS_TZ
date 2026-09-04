@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "run_id": "mts-test-data-20260904-agent",
+  "created_at": "2026-09-04T08:28:23.276111+00:00",
+  "skill_version": "0.1.0",
+  "runtime": {
+    "python": "3.13.0",
+    "pdfplumber": "0.11.10",
+    "pdfminer.six": "20260107",
+    "pypdfium2": "5.13.0"
+  },
+  "profile_mode": "selected",
+  "profile_source": "/Users/v.enbaev/.codex/worktrees/f684/AI analytics review/MTS/experiments/poc-review-data-spec/profile.json",
+  "sources": [
+    {
+      "id": "s001",
+      "role": "document",
+      "name": "Тестовые данные.pdf",
+      "original_path": "/Users/v.enbaev/.codex/worktrees/f684/AI analytics review/MTS/Тестовые данные.pdf",
+      "status": "available",
+      "snapshot": "sources/s001.pdf",
+      "sha256": "019f561d37b836e7aece1540144981b909046a34dd38cb300dba308eb137b426",
+      "size": 328295,
+      "parser": {
+        "name": "pdfplumber",
+        "version": "0.11.10",
+        "settings": {
+          "text": {
+            "layout": false,
+            "x_tolerance": 3,
+            "y_tolerance": 3
+          },
+          "tables": {
+            "vertical_strategy": "lines",
+            "horizontal_strategy": "lines"
+          }
+        }
+      },
+      "raw": "raw/s001.pdfplumber.json"
+    },
+    {
+      "id": "s002",
+      "role": "context",
+      "name": "case-brief.txt",
+      "original_path": "/Users/v.enbaev/.codex/worktrees/f684/AI analytics review/MTS/sources/case-brief.txt",
+      "status": "available",
+      "snapshot": "sources/s002.txt",
+      "sha256": "d853f0e8dee45dff862256bc69e5f83dc5b19ae4b2eb751a29de71069edb85b2",
+      "size": 10399,
+      "parser": {
+        "name": "utf8-text",
+        "version": "1",
+        "settings": {
+          "encoding": "utf-8",
+          "blocks": "blank-lines"
+        }
+      },
+      "raw": "raw/s002.utf8-text.json"
+    },
+    {
+      "id": "s003",
+      "role": "context",
+      "name": "document-analysis.md",
+      "original_path": "/Users/v.enbaev/.codex/worktrees/f684/AI analytics review/MTS/document-analysis.md",
+      "status": "available",
+      "snapshot": "sources/s003.md",
+      "sha256": "7a0760439246d2d2207f766b77e806f5a3b41619fa99f17a47e5515396405efb",
+      "size": 8103,
+      "parser": {
+        "name": "utf8-text",
+        "version": "1",
+        "settings": {
+          "encoding": "utf-8",
+          "blocks": "blank-lines"
+        }
+      },
+      "raw": "raw/s003.utf8-text.json"
+    },
+    {
+      "id": "s004",
+      "role": "context",
+      "name": "test-data.extracted.md",
+      "original_path": "/Users/v.enbaev/.codex/worktrees/f684/AI analytics review/MTS/sources/test-data.extracted.md",
+      "status": "available",
+      "snapshot": "sources/s004.md",
+      "sha256": "74343c041d249a53fbf8ade408f868fa72fcddfd274fe11d02f14b37ad1412ed",
+      "size": 16045,
+      "parser": {
+        "name": "utf8-text",
+        "version": "1",
+        "settings": {
+          "encoding": "utf-8",
+          "blocks": "blank-lines"
+        }
+      },
+      "raw": "raw/s004.utf8-text.json"
+    }
+  ],
+  "artifacts": {
+    "bundle.json": "9c7b2af4cf960d46af2e5dc06ad519c560fc02dc04d89db3e8fde2d7bb4c2c0f",
+    "profile.json": "3752986ccd88061c036fc9e668ce3712d0c9af2cb52cf927b2271bf4003aea3c",
+    "settings.json": "57cd96b7c93a585f3bd9413336ca80306575f9d1480e97c5b5a98b579100cd5c",
+    "report.template.json": "bcd31fb76c5db81e840bbc555233ae22b9b264a6d51de1ffb97ceff2cd75606f",
+    "raw/s001.pdfplumber.json": "15be9eb7153b8f1abdf035e92aeef2a9d6c9207c6c128f872d776610426ca084",
+    "raw/s002.utf8-text.json": "5eed30f6046c1b6dbf2bfe796a0b2c56bd13bc9017f678255d731af5623b99af",
+    "raw/s003.utf8-text.json": "0deee1bcfd6c5ca645e74b8d42374f6cd397e63c677ee2f431a21cb5983ea966",
+    "raw/s004.utf8-text.json": "1569d0b0dbd27faa053fb5aa78135fa188f48e4f374e5786424e829f9e227626"
+  },
+  "prepare_seconds": 0.398602
+}

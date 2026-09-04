@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "name", "version", "role", "goal", "checks", "context_files"],
+  "properties": {
+    "schema_version": {"const": 1}, "name": {"type": "string", "pattern": "\\S"},
+    "version": {"type": "string", "pattern": "\\S"}, "role": {"type": "string", "pattern": "\\S"},
+    "goal": {"type": "string", "pattern": "\\S"},
+    "checks": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "\\S"}},
+    "context_files": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "\\S"}}
+  }
+}
