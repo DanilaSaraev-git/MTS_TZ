@@ -4,7 +4,7 @@
 
 ## Web ↔ Backend
 
-[openapi.yaml](openapi.yaml) — design-first источник истины для HTTP v1. Web работает только с ресурсами HTTP и не читает файлы PoC или `review-output.v1` напрямую. [deployment-boundary.md](deployment-boundary.md) фиксирует границу доверенного deployment: один настроенный actor, одна organization и один workspace.
+[openapi.yaml](openapi.yaml) — design-first источник истины для HTTP v1. [Swagger UI](swagger/README.md) даёт визуальную интерактивную документацию поверх этого же файла без копирования схемы. Web работает только с ресурсами HTTP и не читает файлы PoC или `review-output.v1` напрямую. [deployment-boundary.md](deployment-boundary.md) фиксирует границу доверенного deployment: один настроенный actor, одна organization и один workspace.
 
 Основной frontend-flow:
 
