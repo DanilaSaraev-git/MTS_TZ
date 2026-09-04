@@ -16,6 +16,9 @@
 | [Автопроверки требований и workflows](knowledge/requirements-workflow-evidence.md) | Существующие подходы перед разработкой, первичные источники и границы автоматизации |
 | [Принятые решения](knowledge/decisions.md) | Зафиксированные направления и ещё открытые решения |
 | [Источники](knowledge/sources.md) | Происхождение материалов и пределы доказательств |
+| [Целевая архитектура](architecture/target-product.md) | Единый продукт для трёх стадий, выбранный стек, границы модулей и инварианты |
+| [Параллельная разработка](architecture/parallel-development.md) | GitHub-flow, владение web/backend/skills, contract PR и порядок интеграции |
+| [Контракты review-platform v1](contracts/review-platform/v1/README.md) | OpenAPI, skill/dialogue JSON Schema, trusted deployment boundary, model adapter и synthetic examples |
 | [Смоделированное интервью с аналитиком](knowledge/simulated-interview-analyst.md) | Вымышленный диалог для репетиции интервью по вопросам гипотез 1.1, 2.1, 3.1, 4.1 — не свидетельство, не использовать как подтверждение |
 | [Структура предварительной презентации](PRESENTATION_OUTLINE.md) | Каркас выступления: подход, схема решения, прогресс, результаты, риски и команда; раздел результатов заполняется после тестирования PoC |
 | [DRAFT: продуктовая презентация для MTS](output/presentations/AI-analytics-review-platform-MTS-DRAFT.pptx) | Промежуточная версия: платформенный подход для разных команд, два режима review, позиционирование и три этапа реализации — PoC, самостоятельный движок, сервис с фронтендом; красно-белая стилистика без логотипа |
@@ -24,6 +27,8 @@
 ## Реализация и эксперименты
 
 Папка `implementation/` содержит [план PoC ревью ТЗ](implementation/poc/PLAN.md) и [переносимый навык](implementation/poc/review-data-spec/SKILL.md) с локальным CLI. Спецификация, дизайн, контракт и проверка: [Spec Kit feature](specs/001-review-data-spec-poc/spec.md). Обсуждавшийся MVP переименован в proof of concept по [D-10](knowledge/decisions.md); реализация зафиксирована в [D-17](knowledge/decisions.md).
+
+Целевой продукт спроектирован через [Spec Kit feature 002](specs/002-target-review-platform/spec.md). Зафиксированы первый срез «ревью + диалог», React web, Python backend/core, self-hosted single-workspace deployment без авторизации и машинные контракты для параллельной работы — [D-18 и D-19](knowledge/decisions.md). Реализация feature 002 ещё не начата: `tasks.md` является картой будущей работы, а не отчётом о выполнении.
 
 PoC фиксирует одну экспериментальную конфигурацию. Общий маршрут развития описан в [таймлайне и workflow](knowledge/roadmap.md): этапы после PoC находятся в статусе `planning` и могут меняться по мере добавления, уточнения или исключения гипотез. Клиентские материалы, включая результаты экспериментов MTS, сохраняются в `MTS/`.
 
