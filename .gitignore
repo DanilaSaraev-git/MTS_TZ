@@ -4,3 +4,20 @@ test_info.md
 
 # Local macOS metadata
 .DS_Store
+
+# Python PoC: local environments and generated packaging
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.coverage
+htmlcov/
+
+# Scratch runs and visual QA; curated client experiment results remain trackable
+.local-runs/
+.local-qa/
+.env
+.env.*
