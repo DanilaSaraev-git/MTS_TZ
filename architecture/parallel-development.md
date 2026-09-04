@@ -15,12 +15,12 @@
 
 ## Общая точка старта
 
-На GitHub публикуются ветка `codex/002-target-review-platform` и аннотированный тег `review-platform-contract-v1.0.0`. Тег указывает на проверенный контрактный коммит. Обе реализационные ветки создаются от этого тега:
+На GitHub публикуются ветка `codex/002-target-review-platform` и аннотированный тег `review-platform-contract-v1.0.1`. Тег указывает на проверенный no-auth baseline, включая зарезервированную папку `apps/web/` и согласованные Spec Kit-артефакты. Обе реализационные ветки создаются от этого тега:
 
 ```bash
 git fetch origin --tags
-git switch -c codex/web-review-v1 review-platform-contract-v1.0.0
-git switch -c codex/backend-review-v1 review-platform-contract-v1.0.0
+git switch -c codex/web-review-v1 review-platform-contract-v1.0.1
+git switch -c codex/backend-review-v1 review-platform-contract-v1.0.1
 ```
 
 Вторую команду выполняет автор backend в своей рабочей копии, а не поверх web-ветки. Существующий `codex/web-review-ui-mockup` остаётся визуальным прототипом; нужные UI-коммиты переносятся в новую web-ветку отдельно, после чего UI подключается к сгенерированному клиенту.

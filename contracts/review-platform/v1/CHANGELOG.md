@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-04 — v1.0.1 handoff baseline
+
+- Согласованы Spec Kit-артефакты, архитектура и задачи с no-auth deployment boundary.
+- В Git baseline добавлена зарезервированная папка `apps/web/` для ветки коллеги.
+- HTTP и skill payload semantics относительно опубликованного `v1.0.0` не изменились.
+
 ## 2026-09-04 — v1 baseline
 
 - Зафиксирован асинхронный HTTP-flow загрузки, запуска, polling, отчёта и решения человека.
