@@ -1,0 +1,15 @@
+{
+  "items": [
+    {
+      "id": "balanced",
+      "version": "1.0.0",
+      "name": "Сбалансированный",
+      "description": "Профиль по умолчанию для смыслового ревью.",
+      "capabilities": [
+        "text_generation",
+        "native_structured_output"
+      ],
+      "availability": "available"
+    }
+  ]
+}

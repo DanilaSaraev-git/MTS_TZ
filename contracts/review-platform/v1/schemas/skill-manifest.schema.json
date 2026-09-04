@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://review-data-spec.local/contracts/review-skill.v1.schema.json",
+  "title": "Review skill manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "id",
+    "version",
+    "display_name",
+    "description",
+    "operations",
+    "references",
+    "requires",
+    "files"
+  ],
+  "properties": {
+    "manifest_version": {"const": "review-skill.v1"},
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$", "maxLength": 128},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$"},
+    "display_name": {"type": "string", "minLength": 1, "maxLength": 255},
+    "description": {"type": "string", "minLength": 1, "maxLength": 2000},
+    "operations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review", "finding_dialogue"],
+      "properties": {
+        "review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["input", "output", "instructions"],
+          "properties": {
+            "input": {"const": "review-input.v1"},
+            "output": {"const": "review-output.v1"},
+            "instructions": {"$ref": "#/$defs/relative_path"}
+          }
+        },
+        "finding_dialogue": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["input", "output", "instructions"],
+          "properties": {
+            "input": {"const": "finding-dialogue-input.v1"},
+            "output": {"const": "finding-dialogue-output.v1"},
+            "instructions": {"$ref": "#/$defs/relative_path"}
+          }
+        }
+      }
+    },
+    "references": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/relative_path"}
+    },
+    "requires": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["engine", "model_capabilities"],
+      "properties": {
+        "engine": {"type": "string", "pattern": "^>=[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "model_capabilities": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["text_generation", "vision", "native_structured_output"]}
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {"$ref": "#/$defs/relative_path"},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "relative_path": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$",
+      "minLength": 1,
+      "maxLength": 255
+    }
+  }
+}
