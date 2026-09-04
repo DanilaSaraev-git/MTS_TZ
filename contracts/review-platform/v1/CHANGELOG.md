@@ -18,3 +18,4 @@
 - Выбор поставщика LLM скрыт за версионированным профилем модели и внутренним портом backend; web больше не выбирает skill ID.
 - Добавлены точные display locators и quote offsets, deployment boundary для одного настроенного actor/workspace и synthetic mock examples.
 - HTTP bootstrap не моделирует identity/access-control runtime: `organization_id` сохранён только как namespace и будущий seam.
+- Добавлен статический Swagger UI для просмотра канонического OpenAPI без генерации отдельной схемы.
