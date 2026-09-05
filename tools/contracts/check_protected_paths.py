@@ -17,7 +17,7 @@ PROTECTED = (
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--baseline", default="471316ea08f1cf55116e2e4bc86d626454fbf632")
+    parser.add_argument("--baseline", default="280ab87e22ed02c2e16ccb1baa53d74ab64d5542")
     parser.add_argument("--json", action="store_true")
     parser.add_argument(
         "--allow-path", action="append", default=[],
