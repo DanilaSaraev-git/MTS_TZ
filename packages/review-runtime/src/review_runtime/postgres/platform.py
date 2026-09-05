@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import base64
 import hashlib
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
@@ -10,6 +12,13 @@ from uuid import uuid4
 import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
+from review_core.application.execution import (
+    CommitOutcomeUnknown,
+    ExecutionAdmission,
+    ExecutionClaim,
+    ExecutionFailure,
+    ExecutionTerminal,
+)
 from review_core.application.findings import next_decision
 from review_core.application.idempotency import require_idempotency_key
 from review_core.application.platform import DocumentRecord, ReviewExecutor, RunRecord
@@ -42,6 +51,742 @@ def wire_time(value: datetime) -> str:
     return value.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
+@dataclass(frozen=True, slots=True)
+class ReviewStorageRequest:
+    workspace_id: str
+    idempotency_key: str
+    request_body: dict[str, Any]
+    run_id: str
+    snapshot_id: str
+    snapshot: dict[str, Any]
+    run_value: dict[str, Any]
+    sources: tuple[dict[str, Any], ...]
+
+
+class PostgresReviewExecutionStorage:
+    """Short, connection-owned PostgreSQL phases for one review execution."""
+
+    def __init__(
+        self,
+        *,
+        database_url: str,
+        organization_id: str,
+        workspace_id: str,
+        artifacts: PosixArtifactStore,
+        report_validator: CanonicalReportValidator,
+        dialogue_policy: dict[str, Any],
+        terminal_committer: Callable[[psycopg.Connection[dict[str, Any]]], None] | None = None,
+    ) -> None:
+        self.database_url = database_url
+        self.organization_id = organization_id
+        self.workspace_id = workspace_id
+        self.artifacts = artifacts
+        self.report_validator = report_validator
+        self.dialogue_policy = dialogue_policy
+        self._terminal_committer = terminal_committer or (lambda connection: connection.commit())
+
+    def connect(self) -> psycopg.Connection[dict[str, Any]]:
+        return psycopg.connect(self.database_url, row_factory=dict_row)
+
+    def admit(self, request: ReviewStorageRequest, deadline_at: datetime) -> ExecutionAdmission:
+        if request.workspace_id != self.workspace_id:
+            raise NotFound()
+        if deadline_at.tzinfo is None:
+            raise ValueError("deadline_at must be timezone-aware")
+        require_idempotency_key(request.idempotency_key)
+        request_digest = digest_value(request.request_body)
+        operation = "create_run"
+        lock_key = advisory_fence_key(
+            "review-admission",
+            f"{self.organization_id}:{request.workspace_id}:{operation}:{request.idempotency_key}",
+            "v1",
+        )
+        execution_id = str(uuid4())
+        work_item_id = str(uuid4())
+        connection = self.connect()
+        try:
+            connection.execute("SELECT pg_advisory_xact_lock(%s)", (lock_key,))
+            existing = connection.execute(
+                """SELECT request_digest, resource_id
+                   FROM idempotency_records
+                   WHERE organization_id=%s AND workspace_id=%s
+                     AND operation=%s AND key=%s""",
+                (
+                    self.organization_id,
+                    request.workspace_id,
+                    operation,
+                    request.idempotency_key,
+                ),
+            ).fetchone()
+            if existing is not None:
+                if existing["request_digest"] != request_digest:
+                    raise Conflict(
+                        "idempotency_conflict",
+                        "The key was already used with a different request.",
+                    )
+                execution = connection.execute(
+                    """SELECT id FROM review_run_executions
+                       WHERE organization_id=%s AND workspace_id=%s AND run_id=%s""",
+                    (self.organization_id, request.workspace_id, existing["resource_id"]),
+                ).fetchone()
+                if execution is None:
+                    raise RuntimeError("replayed review run has no execution record")
+                connection.commit()
+                return ExecutionAdmission(
+                    resource_id=existing["resource_id"],
+                    execution_id=execution["id"],
+                    replay=True,
+                )
+            created_at = datetime.now(UTC)
+            connection.execute(
+                """INSERT INTO execution_snapshots(
+                     organization_id,workspace_id,id,digest,codec_id,value,created_at
+                   ) VALUES(%s,%s,%s,%s,%s,%s,%s)
+                   ON CONFLICT (organization_id,workspace_id,digest) DO NOTHING""",
+                (
+                    self.organization_id,
+                    request.workspace_id,
+                    request.snapshot_id,
+                    digest_value(request.snapshot),
+                    CODEC,
+                    Jsonb(request.snapshot),
+                    created_at,
+                ),
+            )
+            connection.execute(
+                """INSERT INTO review_runs(
+                     organization_id,workspace_id,id,document_id,state,revision,snapshot,value,
+                     cancel_requested_at
+                   ) VALUES(%s,%s,%s,%s,'queued',0,%s,%s,NULL)""",
+                (
+                    self.organization_id,
+                    request.workspace_id,
+                    request.run_id,
+                    request.request_body["document_id"],
+                    Jsonb(request.snapshot),
+                    Jsonb(request.run_value),
+                ),
+            )
+            for source in request.sources:
+                connection.execute(
+                    """INSERT INTO review_run_sources(
+                         organization_id,workspace_id,run_id,source_id,document_id,role,ordinal,prepared
+                       ) VALUES(%s,%s,%s,%s,%s,%s,%s,NULL)""",
+                    (
+                        self.organization_id,
+                        request.workspace_id,
+                        request.run_id,
+                        source["source_id"],
+                        source["document_id"],
+                        source["role"],
+                        source["ordinal"],
+                    ),
+                )
+            execution_value = {
+                "deadline_at": wire_time(deadline_at),
+                "prepared_input_digest": None,
+                "started_at": None,
+                "finished_at": None,
+                "error": None,
+            }
+            connection.execute(
+                """INSERT INTO review_run_executions(
+                     run_id,organization_id,workspace_id,id,state,checkpoint,attempt_count,
+                     lease_token,lease_owner,revision,value
+                   ) VALUES(%s,%s,%s,%s,'accepted','accepted',0,NULL,NULL,0,%s)""",
+                (
+                    request.run_id,
+                    self.organization_id,
+                    request.workspace_id,
+                    execution_id,
+                    Jsonb(execution_value),
+                ),
+            )
+            connection.execute(
+                """INSERT INTO review_work_items(
+                     organization_id,workspace_id,execution_id,id,ordinal,fragment_id,state,value
+                   ) VALUES(%s,%s,%s,%s,0,NULL,'accepted',%s)""",
+                (
+                    self.organization_id,
+                    request.workspace_id,
+                    execution_id,
+                    work_item_id,
+                    Jsonb({"source_ids": [source["source_id"] for source in request.sources]}),
+                ),
+            )
+            connection.execute(
+                """INSERT INTO idempotency_records(
+                     organization_id,workspace_id,operation,key,request_digest,codec_id,
+                     resource_kind,resource_id
+                   ) VALUES(%s,%s,%s,%s,%s,%s,'review_run',%s)""",
+                (
+                    self.organization_id,
+                    request.workspace_id,
+                    operation,
+                    request.idempotency_key,
+                    request_digest,
+                    CODEC,
+                    request.run_id,
+                ),
+            )
+            connection.commit()
+        except BaseException:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
+        return ExecutionAdmission(
+            resource_id=request.run_id,
+            execution_id=execution_id,
+            replay=False,
+        )
+
+    def claim(self, admission: ExecutionAdmission, owner_token: str) -> ExecutionClaim | None:
+        connection = self.connect()
+        try:
+            row = connection.execute(
+                """SELECT e.state, e.value, r.state AS run_state, r.cancel_requested_at, r.value AS run_value
+                   FROM review_run_executions e
+                   JOIN review_runs r
+                     ON (r.organization_id,r.workspace_id,r.id) =
+                        (e.organization_id,e.workspace_id,e.run_id)
+                   WHERE e.organization_id=%s AND e.workspace_id=%s
+                     AND e.id=%s AND e.run_id=%s
+                   FOR UPDATE OF e, r""",
+                (
+                    self.organization_id,
+                    self.workspace_id,
+                    admission.execution_id,
+                    admission.resource_id,
+                ),
+            ).fetchone()
+            if (
+                row is None
+                or row["state"] != "accepted"
+                or row["run_state"] != "queued"
+                or row["cancel_requested_at"] is not None
+            ):
+                connection.rollback()
+                return None
+            if not connection.execute(
+                "SELECT clock_timestamp() < (%s->>'deadline_at')::timestamptz",
+                (Jsonb(row["value"]),),
+            ).fetchone()["?column?"]:
+                connection.rollback()
+                return None
+            started_at = datetime.now(UTC)
+            execution_value = row["value"] | {"started_at": wire_time(started_at)}
+            updated = connection.execute(
+                """UPDATE review_run_executions
+                   SET state='running',checkpoint='preparing',attempt_count=attempt_count+1,
+                       lease_token=%s,lease_owner=%s,revision=revision+1,value=%s
+                   WHERE organization_id=%s AND workspace_id=%s AND id=%s
+                     AND run_id=%s AND state='accepted' AND lease_token IS NULL
+                   RETURNING id""",
+                (
+                    owner_token,
+                    owner_token,
+                    Jsonb(execution_value),
+                    self.organization_id,
+                    self.workspace_id,
+                    admission.execution_id,
+                    admission.resource_id,
+                ),
+            ).fetchone()
+            if updated is None:
+                connection.rollback()
+                return None
+            connection.execute(
+                """UPDATE review_work_items SET state='running'
+                   WHERE organization_id=%s AND workspace_id=%s AND execution_id=%s
+                     AND state='accepted'""",
+                (self.organization_id, self.workspace_id, admission.execution_id),
+            )
+            run_value = row["run_value"] | {
+                "state": "preparing",
+                "started_at": wire_time(started_at),
+                "progress": {"percent": 20, "message": "Preparing sources"},
+            }
+            connection.execute(
+                """UPDATE review_runs SET state='preparing',revision=revision+1,value=%s
+                   WHERE organization_id=%s AND workspace_id=%s AND id=%s AND state='queued'""",
+                (
+                    Jsonb(run_value),
+                    self.organization_id,
+                    self.workspace_id,
+                    admission.resource_id,
+                ),
+            )
+            connection.commit()
+        except BaseException:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
+        return ExecutionClaim(
+            resource_id=admission.resource_id,
+            execution_id=admission.execution_id,
+            owner_token=owner_token,
+        )
+
+    def save_prepared(self, claim: ExecutionClaim, prepared: dict[str, Any]) -> None:
+        sources = prepared.get("sources")
+        if not isinstance(sources, dict):
+            raise ValueError("prepared review must contain source snapshots")
+        prepared_digest = prepared.get("prepared_input_digest") or digest_value(prepared)
+        connection = self.connect()
+        try:
+            row = connection.execute(
+                """SELECT e.state, e.lease_token, e.value, r.state AS run_state,
+                          r.cancel_requested_at, r.value AS run_value
+                   FROM review_run_executions e
+                   JOIN review_runs r
+                     ON (r.organization_id,r.workspace_id,r.id) =
+                        (e.organization_id,e.workspace_id,e.run_id)
+                   WHERE e.organization_id=%s AND e.workspace_id=%s
+                     AND e.id=%s AND e.run_id=%s
+                   FOR UPDATE OF e, r""",
+                (
+                    self.organization_id,
+                    self.workspace_id,
+                    claim.execution_id,
+                    claim.resource_id,
+                ),
+            ).fetchone()
+            if row is None or row["lease_token"] != claim.owner_token or row["state"] != "running":
+                raise Conflict("execution_owner_conflict", "Review execution owner is stale.")
+            if row["cancel_requested_at"] is not None or row["run_state"] == "cancelled":
+                raise Conflict("execution_cancelled", "Review execution was cancelled.")
+            deadline_open = connection.execute(
+                "SELECT clock_timestamp() < (%s->>'deadline_at')::timestamptz AS open",
+                (Jsonb(row["value"]),),
+            ).fetchone()
+            if deadline_open is None or not deadline_open["open"]:
+                raise TimeoutError("review execution deadline expired")
+            persisted_sources = connection.execute(
+                """SELECT source_id FROM review_run_sources
+                   WHERE organization_id=%s AND workspace_id=%s AND run_id=%s
+                   ORDER BY ordinal""",
+                (self.organization_id, self.workspace_id, claim.resource_id),
+            ).fetchall()
+            expected_source_ids = [item["source_id"] for item in persisted_sources]
+            if set(sources) != set(expected_source_ids):
+                raise ValueError("prepared review source inventory is not exact")
+            for source_id in expected_source_ids:
+                connection.execute(
+                    """UPDATE review_run_sources SET prepared=%s
+                       WHERE organization_id=%s AND workspace_id=%s AND run_id=%s
+                         AND source_id=%s AND prepared IS NULL""",
+                    (
+                        Jsonb(sources[source_id]),
+                        self.organization_id,
+                        self.workspace_id,
+                        claim.resource_id,
+                        source_id,
+                    ),
+                )
+            work_item_value = prepared.get("work_item", {})
+            connection.execute(
+                """UPDATE review_work_items SET state='prepared', value=%s
+                   WHERE organization_id=%s AND workspace_id=%s AND execution_id=%s
+                     AND state='running'""",
+                (
+                    Jsonb(work_item_value),
+                    self.organization_id,
+                    self.workspace_id,
+                    claim.execution_id,
+                ),
+            )
+            run_value = row["run_value"] | {
+                "state": "reviewing",
+                "progress": {"percent": 60, "message": "Reviewing document"},
+            }
+            connection.execute(
+                """UPDATE review_runs SET state='reviewing', revision=revision+1, value=%s
+                   WHERE organization_id=%s AND workspace_id=%s AND id=%s
+                     AND state='preparing' AND cancel_requested_at IS NULL""",
+                (
+                    Jsonb(run_value),
+                    self.organization_id,
+                    self.workspace_id,
+                    claim.resource_id,
+                ),
+            )
+            execution_value = row["value"] | {"prepared_input_digest": prepared_digest}
+            owner_cas = connection.execute(
+                """UPDATE review_run_executions
+                   SET checkpoint='reviewing', revision=revision+1, value=%s
+                   WHERE organization_id=%s AND workspace_id=%s AND id=%s AND run_id=%s
+                     AND state='running' AND lease_token=%s
+                   RETURNING id""",
+                (
+                    Jsonb(execution_value),
+                    self.organization_id,
+                    self.workspace_id,
+                    claim.execution_id,
+                    claim.resource_id,
+                    claim.owner_token,
+                ),
+            ).fetchone()
+            if owner_cas is None:
+                raise Conflict("execution_owner_conflict", "Review execution owner is stale.")
+            connection.commit()
+        except BaseException:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
+
+    def publish(
+        self,
+        claim: ExecutionClaim,
+        result: dict[str, Any],
+        deadline_at: datetime,
+    ) -> ExecutionTerminal:
+        self.report_validator.validate(result)
+        report_bytes = canonical_bytes(result)
+        digest = hashlib.sha256(report_bytes).hexdigest()
+        etag = strong_etag(report_bytes)
+        staged = self.artifacts.stage(self.workspace_id, report_bytes, expected_sha256=digest)
+        connection = self.connect()
+        commit_started = False
+        try:
+            current = connection.execute(
+                """SELECT e.state AS execution_state, e.lease_token, e.value AS execution_value,
+                          r.state AS run_state, r.cancel_requested_at, r.value AS run_value
+                   FROM review_run_executions e
+                   JOIN review_runs r
+                     ON (r.organization_id,r.workspace_id,r.id) =
+                        (e.organization_id,e.workspace_id,e.run_id)
+                   WHERE e.organization_id=%s AND e.workspace_id=%s
+                     AND e.id=%s AND e.run_id=%s
+                   FOR UPDATE OF e, r""",
+                (
+                    self.organization_id,
+                    self.workspace_id,
+                    claim.execution_id,
+                    claim.resource_id,
+                ),
+            ).fetchone()
+            if current is None:
+                raise Conflict("execution_owner_conflict", "Review execution owner is stale.")
+            if current["run_state"] == "cancelled" or current["execution_state"] == "cancelled":
+                connection.rollback()
+                return ExecutionTerminal(claim.resource_id, "cancelled")
+            if (
+                current["lease_token"] != claim.owner_token
+                or current["execution_state"] != "running"
+                or current["run_state"] not in {"preparing", "reviewing", "validating"}
+            ):
+                raise Conflict("execution_owner_conflict", "Review execution owner is stale.")
+            database_deadline = connection.execute(
+                "SELECT clock_timestamp() < %s AS open",
+                (deadline_at,),
+            ).fetchone()
+            if database_deadline is None or not database_deadline["open"]:
+                raise TimeoutError("review execution deadline expired")
+            store_key = self.artifacts.promote(staged)
+            artifact_id = str(uuid4())
+            report_id = result["id"]
+            created_at = datetime.now(UTC)
+            fence = advisory_fence_key(self.workspace_id, store_key, digest)
+            connection.execute("SELECT pg_advisory_xact_lock(%s)", (fence,))
+            connection.execute(
+                """INSERT INTO artifacts(
+                     organization_id,workspace_id,id,kind,store_key,sha256,size_bytes,
+                     media_type,canonical_codec_id,created_at
+                   ) VALUES(%s,%s,%s,'report_canonical',%s,%s,%s,'application/json',%s,%s)""",
+                (
+                    self.organization_id,
+                    self.workspace_id,
+                    artifact_id,
+                    store_key,
+                    digest,
+                    len(report_bytes),
+                    CODEC,
+                    created_at,
+                ),
+            )
+            connection.execute(
+                """INSERT INTO review_reports(
+                     organization_id,workspace_id,id,run_id,artifact_id,canonical_sha256,
+                     etag,codec_id,graph,created_at
+                   ) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                (
+                    self.organization_id,
+                    self.workspace_id,
+                    report_id,
+                    claim.resource_id,
+                    artifact_id,
+                    digest,
+                    etag,
+                    CODEC,
+                    Jsonb(result),
+                    created_at,
+                ),
+            )
+            connection.execute(
+                """INSERT INTO report_coverage(organization_id,workspace_id,report_id,value)
+                   VALUES(%s,%s,%s,%s)""",
+                (self.organization_id, self.workspace_id, report_id, Jsonb(result["coverage"])),
+            )
+            connection.execute(
+                """INSERT INTO report_provenance(organization_id,workspace_id,report_id,value)
+                   VALUES(%s,%s,%s,%s)""",
+                (self.organization_id, self.workspace_id, report_id, Jsonb(result["provenance"])),
+            )
+            self._insert_findings(connection, claim.resource_id, report_id, result["findings"])
+            connection.execute(
+                """UPDATE review_work_items SET state='completed'
+                   WHERE organization_id=%s AND workspace_id=%s AND execution_id=%s
+                     AND state='prepared'""",
+                (self.organization_id, self.workspace_id, claim.execution_id),
+            )
+            finished_at = datetime.now(UTC)
+            completed_run = current["run_value"] | {
+                "state": "completed",
+                "progress": {"percent": 100, "message": "Review completed"},
+                "finished_at": wire_time(finished_at),
+                "report_available": True,
+                "error": None,
+            }
+            completed_execution = current["execution_value"] | {
+                "finished_at": wire_time(finished_at),
+                "error": None,
+            }
+            terminal_cas = connection.execute(
+                """WITH execution_terminal AS (
+                     UPDATE review_run_executions e
+                     SET state='completed', checkpoint='published', revision=e.revision+1, value=%s
+                     WHERE e.organization_id=%s AND e.workspace_id=%s
+                       AND e.id=%s AND e.run_id=%s AND e.state='running'
+                       AND e.lease_token=%s AND clock_timestamp() < %s
+                       AND EXISTS (
+                         SELECT 1 FROM review_runs r
+                         WHERE r.organization_id=e.organization_id
+                           AND r.workspace_id=e.workspace_id AND r.id=e.run_id
+                           AND r.state IN ('preparing','reviewing','validating')
+                           AND r.cancel_requested_at IS NULL
+                       )
+                     RETURNING e.run_id
+                   ), run_terminal AS (
+                     UPDATE review_runs r
+                     SET state='completed', revision=r.revision+1, value=%s
+                     WHERE r.organization_id=%s AND r.workspace_id=%s AND r.id=%s
+                       AND r.state IN ('preparing','reviewing','validating')
+                       AND r.cancel_requested_at IS NULL
+                       AND EXISTS (SELECT 1 FROM execution_terminal e WHERE e.run_id=r.id)
+                     RETURNING r.id
+                   )
+                   SELECT (SELECT count(*) FROM execution_terminal) AS executions,
+                          (SELECT count(*) FROM run_terminal) AS runs""",
+                (
+                    Jsonb(completed_execution),
+                    self.organization_id,
+                    self.workspace_id,
+                    claim.execution_id,
+                    claim.resource_id,
+                    claim.owner_token,
+                    deadline_at,
+                    Jsonb(completed_run),
+                    self.organization_id,
+                    self.workspace_id,
+                    claim.resource_id,
+                ),
+            ).fetchone()
+            if terminal_cas is None or terminal_cas["executions"] != 1 or terminal_cas["runs"] != 1:
+                raise TimeoutError("review terminal publication was not admitted")
+            commit_started = True
+            self._terminal_committer(connection)
+        except psycopg.Error as error:
+            if commit_started:
+                raise CommitOutcomeUnknown from error
+            connection.rollback()
+            raise
+        except BaseException:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
+        return ExecutionTerminal(claim.resource_id, "completed")
+
+    def _insert_findings(
+        self,
+        connection: psycopg.Connection[dict[str, Any]],
+        run_id: str,
+        report_id: str,
+        findings: list[dict[str, Any]],
+    ) -> None:
+        for finding in findings:
+            connection.execute(
+                """INSERT INTO findings(organization_id,workspace_id,report_id,id,ordinal,value)
+                   VALUES(%s,%s,%s,%s,%s,%s)""",
+                (
+                    self.organization_id,
+                    self.workspace_id,
+                    report_id,
+                    finding["id"],
+                    finding["ordinal"],
+                    Jsonb(finding),
+                ),
+            )
+            for ordinal, anchor in enumerate(finding["anchors"], start=1):
+                connection.execute(
+                    """INSERT INTO finding_anchors(
+                         organization_id,workspace_id,finding_id,ordinal,value
+                       ) VALUES(%s,%s,%s,%s,%s)""",
+                    (
+                        self.organization_id,
+                        self.workspace_id,
+                        finding["id"],
+                        ordinal,
+                        Jsonb(anchor),
+                    ),
+                )
+            decision = {
+                "status": "unreviewed",
+                "revision": 0,
+                "actor": None,
+                "reason": None,
+                "resolution": None,
+                "decided_at": None,
+            }
+            dialogue_id = str(uuid4())
+            dialogue = {
+                "id": dialogue_id,
+                "run_id": run_id,
+                "finding_id": finding["id"],
+                "revision": 0,
+                "state": "open",
+                "turn_count": 0,
+                "can_send_message": True,
+                "blocked_reason": None,
+                "policy": self.dialogue_policy,
+                "turns": [],
+            }
+            connection.execute(
+                """INSERT INTO finding_states(
+                     organization_id,workspace_id,finding_id,decision_revision,value
+                   ) VALUES(%s,%s,%s,0,%s)""",
+                (self.organization_id, self.workspace_id, finding["id"], Jsonb(decision)),
+            )
+            connection.execute(
+                """INSERT INTO finding_dialogues(
+                     organization_id,workspace_id,id,finding_id,revision,value
+                   ) VALUES(%s,%s,%s,%s,0,%s)""",
+                (
+                    self.organization_id,
+                    self.workspace_id,
+                    dialogue_id,
+                    finding["id"],
+                    Jsonb(dialogue),
+                ),
+            )
+
+    def fail(self, claim: ExecutionClaim, failure: ExecutionFailure) -> ExecutionTerminal:
+        connection = self.connect()
+        try:
+            current = connection.execute(
+                """SELECT e.state AS execution_state, e.lease_token, e.value AS execution_value,
+                          r.state AS run_state, r.value AS run_value
+                   FROM review_run_executions e
+                   JOIN review_runs r
+                     ON (r.organization_id,r.workspace_id,r.id) =
+                        (e.organization_id,e.workspace_id,e.run_id)
+                   WHERE e.organization_id=%s AND e.workspace_id=%s
+                     AND e.id=%s AND e.run_id=%s
+                   FOR UPDATE OF e, r""",
+                (
+                    self.organization_id,
+                    self.workspace_id,
+                    claim.execution_id,
+                    claim.resource_id,
+                ),
+            ).fetchone()
+            if current is None:
+                raise Conflict("execution_owner_conflict", "Review execution owner is stale.")
+            if current["run_state"] == "cancelled" or current["execution_state"] == "cancelled":
+                connection.rollback()
+                return ExecutionTerminal(claim.resource_id, "cancelled")
+            if current["run_state"] == "completed" and current["execution_state"] == "completed":
+                connection.rollback()
+                return ExecutionTerminal(claim.resource_id, "completed")
+            if current["lease_token"] != claim.owner_token or current["execution_state"] != "running":
+                raise Conflict("execution_owner_conflict", "Review execution owner is stale.")
+            finished_at = datetime.now(UTC)
+            public_error = {
+                "code": failure.code,
+                "message": failure.safe_message,
+                "retryable": failure.retryable,
+            }
+            failed_run = current["run_value"] | {
+                "state": "failed",
+                "finished_at": wire_time(finished_at),
+                "report_available": False,
+                "error": public_error,
+            }
+            failed_execution = current["execution_value"] | {
+                "finished_at": wire_time(finished_at),
+                "error": public_error,
+            }
+            connection.execute(
+                """UPDATE review_work_items SET state='failed'
+                   WHERE organization_id=%s AND workspace_id=%s AND execution_id=%s
+                     AND state IN ('accepted','running','prepared')""",
+                (self.organization_id, self.workspace_id, claim.execution_id),
+            )
+            terminal_cas = connection.execute(
+                """WITH execution_terminal AS (
+                     UPDATE review_run_executions e
+                     SET state='failed', checkpoint='failed', revision=e.revision+1, value=%s
+                     WHERE e.organization_id=%s AND e.workspace_id=%s
+                       AND e.id=%s AND e.run_id=%s AND e.state='running' AND e.lease_token=%s
+                     RETURNING e.run_id
+                   ), run_terminal AS (
+                     UPDATE review_runs r SET state='failed', revision=r.revision+1, value=%s
+                     WHERE r.organization_id=%s AND r.workspace_id=%s AND r.id=%s
+                       AND r.state NOT IN ('completed','failed','cancelled')
+                       AND EXISTS (SELECT 1 FROM execution_terminal e WHERE e.run_id=r.id)
+                     RETURNING r.id
+                   )
+                   SELECT (SELECT count(*) FROM execution_terminal) AS executions,
+                          (SELECT count(*) FROM run_terminal) AS runs""",
+                (
+                    Jsonb(failed_execution),
+                    self.organization_id,
+                    self.workspace_id,
+                    claim.execution_id,
+                    claim.resource_id,
+                    claim.owner_token,
+                    Jsonb(failed_run),
+                    self.organization_id,
+                    self.workspace_id,
+                    claim.resource_id,
+                ),
+            ).fetchone()
+            if terminal_cas is None or terminal_cas["executions"] != 1 or terminal_cas["runs"] != 1:
+                raise Conflict("execution_owner_conflict", "Review execution owner is stale.")
+            connection.commit()
+        except BaseException:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
+        return ExecutionTerminal(claim.resource_id, "failed", error_code=failure.code)
+
+    def read_terminal(self, resource_id: str) -> ExecutionTerminal | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                """SELECT state, value->'error'->>'code' AS error_code
+                   FROM review_runs
+                   WHERE organization_id=%s AND workspace_id=%s AND id=%s""",
+                (self.organization_id, self.workspace_id, resource_id),
+            ).fetchone()
+        if row is None or row["state"] not in {"completed", "failed", "cancelled"}:
+            return None
+        return ExecutionTerminal(resource_id, row["state"], error_code=row["error_code"])
+
+
 class PostgresReviewPlatform:
     """Normalized PostgreSQL/POSIX composition implementing the canonical application facade."""
 
@@ -70,6 +815,14 @@ class PostgresReviewPlatform:
             "max_member_turns": None,
         }
         self._seed_exact()
+        self.review_storage = PostgresReviewExecutionStorage(
+            database_url=self.database_url,
+            organization_id=self.organization_id,
+            workspace_id=self.workspace_id,
+            artifacts=self.artifacts,
+            report_validator=self.report_validator,
+            dialogue_policy=self.dialogue_policy,
+        )
 
     def _connect(self) -> psycopg.Connection[dict[str, Any]]:
         return psycopg.connect(self.database_url, row_factory=dict_row)
@@ -544,6 +1297,11 @@ class PostgresReviewPlatform:
             "engine_version": "1.0.0",
         }
 
+    def snapshot_for_profile_reference(self, reference: dict[str, str]) -> dict[str, Any]:
+        with self._connect() as connection:
+            profile = self._exact_profile(connection, reference)
+        return self._snapshot(profile)
+
     def _exact_profile(
         self, connection: psycopg.Connection[dict[str, Any]], reference: dict[str, str]
     ) -> ProfileVersion:
@@ -559,6 +1317,129 @@ class PostgresReviewPlatform:
         return self._profile(row)
 
     def create_run(self, workspace_id: str, body: dict[str, Any], key: str) -> dict[str, Any]:
+        self._workspace(workspace_id)
+        require_idempotency_key(key)
+        context_ids = body.get("context_document_ids", [])
+        if len(context_ids) > 50:
+            raise InvalidRequest("context_limit", "At most 50 context documents are accepted.")
+        if len(context_ids) != len(set(context_ids)):
+            raise InvalidRequest("duplicate_context", "Context document IDs must be unique.")
+        primary = self.get_document(workspace_id, body["document_id"])
+        contexts = [self.get_document(workspace_id, item) for item in context_ids]
+        with self._connect() as connection:
+            profile = self._exact_profile(connection, body["profile"])
+        if body["model_profile"] != {
+            "id": self.model_profile["id"],
+            "version": self.model_profile["version"],
+        }:
+            raise NotFound()
+        snapshot = self._snapshot(profile)
+        run_id = str(uuid4())
+        created = utc_now()
+        run = {
+            "id": run_id,
+            "workspace_id": workspace_id,
+            "state": "queued",
+            "progress": {"percent": 0, "message": "Review queued"},
+            "document_id": primary.id,
+            "context_document_ids": [item.id for item in contexts],
+            "execution_snapshot": snapshot,
+            "created_by": self.actor,
+            "created_at": wire_time(created),
+            "started_at": None,
+            "finished_at": None,
+            "cancel_requested_at": None,
+            "report_available": False,
+            "error": None,
+        }
+        sources = tuple(
+            {
+                "source_id": "source-main" if ordinal == 1 else f"source-context-{ordinal - 1}",
+                "document_id": document.id,
+                "role": "document" if ordinal == 1 else "context",
+                "ordinal": ordinal,
+            }
+            for ordinal, document in enumerate([primary, *contexts], start=1)
+        )
+        request = ReviewStorageRequest(
+            workspace_id=workspace_id,
+            idempotency_key=key,
+            request_body=body,
+            run_id=run_id,
+            snapshot_id=str(uuid4()),
+            snapshot=snapshot,
+            run_value=run,
+            sources=sources,
+        )
+        deadline_at = created + timedelta(seconds=300)
+        admission = self.review_storage.admit(request, deadline_at)
+        if admission.replay:
+            return self.get_run(workspace_id, admission.resource_id).value
+        claim = self.review_storage.claim(admission, str(uuid4()))
+        if claim is None:
+            raise RuntimeError("accepted review execution could not be claimed")
+        prepared = {
+            "prepared_input_digest": digest_value(
+                {
+                    "snapshot": snapshot,
+                    "sources": [
+                        {
+                            "source_id": source["source_id"],
+                            "document_id": document.id,
+                            "sha256": document.sha256,
+                        }
+                        for source, document in zip(sources, [primary, *contexts], strict=True)
+                    ],
+                }
+            ),
+            "sources": {
+                source["source_id"]: {
+                    "document_id": document.id,
+                    "sha256": document.sha256,
+                    "role": source["role"],
+                    "ordinal": source["ordinal"],
+                }
+                for source, document in zip(sources, [primary, *contexts], strict=True)
+            },
+            "work_item": {"source_ids": [source["source_id"] for source in sources]},
+        }
+        try:
+            self.review_storage.save_prepared(claim, prepared)
+            report = self.executor.execute(
+                run_id=admission.resource_id,
+                report_id=str(uuid4()),
+                document=primary,
+                context=contexts,
+                snapshot=snapshot,
+                created_at=wire_time(utc_now()),
+            )
+        except ValueError as error:
+            self.review_storage.fail(
+                claim,
+                ExecutionFailure("extraction_failed", str(error), False),
+            )
+            return self.get_run(workspace_id, admission.resource_id).value
+        try:
+            self.report_validator.validate(report)
+        except ValueError:
+            self.review_storage.fail(
+                claim,
+                ExecutionFailure(
+                    "validation_failed",
+                    "Generated review report did not satisfy the canonical schema.",
+                    False,
+                ),
+            )
+            return self.get_run(workspace_id, admission.resource_id).value
+        try:
+            self.review_storage.publish(claim, report, deadline_at)
+        except CommitOutcomeUnknown:
+            terminal = self.review_storage.read_terminal(admission.resource_id)
+            if terminal is None:
+                raise
+        return self.get_run(workspace_id, admission.resource_id).value
+
+    def _legacy_create_run(self, workspace_id: str, body: dict[str, Any], key: str) -> dict[str, Any]:
         self._workspace(workspace_id)
         require_idempotency_key(key)
         context_ids = body.get("context_document_ids", [])
@@ -853,20 +1734,58 @@ class PostgresReviewPlatform:
         return {"items": [row["value"] for row in rows], "next_cursor": None}
 
     def cancel_run(self, workspace_id: str, run_id: str) -> dict[str, Any]:
-        record = self.get_run(workspace_id, run_id)
-        if record.value["state"] in {"completed", "failed", "cancelled"}:
-            raise Conflict("run_terminal", "A terminal review run cannot be cancelled.")
-        cancelled = record.value | {
-            "state": "cancelled",
-            "cancel_requested_at": wire_time(utc_now()),
-            "finished_at": wire_time(utc_now()),
-        }
-        with self._connect() as connection:
+        self._workspace(workspace_id)
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                """SELECT state, value FROM review_runs
+                   WHERE organization_id=%s AND workspace_id=%s AND id=%s
+                   FOR UPDATE""",
+                (self.organization_id, workspace_id, run_id),
+            ).fetchone()
+            if row is None:
+                raise NotFound()
+            if row["state"] in {"completed", "failed", "cancelled"}:
+                raise Conflict("run_terminal", "A terminal review run cannot be cancelled.")
+            cancelled_at = utc_now()
+            cancelled = row["value"] | {
+                "state": "cancelled",
+                "cancel_requested_at": wire_time(cancelled_at),
+                "finished_at": wire_time(cancelled_at),
+                "report_available": False,
+            }
             connection.execute(
-                "UPDATE review_runs SET state='cancelled',cancel_requested_at=%s,value=%s,revision=revision+1 WHERE organization_id=%s AND workspace_id=%s AND id=%s AND state NOT IN ('completed','failed','cancelled')",
-                (utc_now(), Jsonb(cancelled), self.organization_id, workspace_id, run_id),
+                """WITH execution_terminal AS (
+                     UPDATE review_run_executions e
+                     SET state='cancelled', checkpoint='cancelled', revision=e.revision+1,
+                         value=e.value::jsonb || %s::jsonb
+                     WHERE e.organization_id=%s AND e.workspace_id=%s AND e.run_id=%s
+                       AND e.state IN ('accepted','running')
+                     RETURNING e.run_id
+                   )
+                   UPDATE review_runs r
+                   SET state='cancelled', cancel_requested_at=%s, value=%s, revision=r.revision+1
+                   WHERE r.organization_id=%s AND r.workspace_id=%s AND r.id=%s
+                     AND r.state NOT IN ('completed','failed','cancelled')""",
+                (
+                    Jsonb({"finished_at": wire_time(cancelled_at), "error": None}),
+                    self.organization_id,
+                    workspace_id,
+                    run_id,
+                    cancelled_at,
+                    Jsonb(cancelled),
+                    self.organization_id,
+                    workspace_id,
+                    run_id,
+                ),
             )
-        return cancelled
+            connection.commit()
+            return cancelled
+        except BaseException:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
 
     def report(self, workspace_id: str, run_id: str) -> tuple[bytes, str]:
         self._workspace(workspace_id)

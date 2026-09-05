@@ -3,8 +3,9 @@ from __future__ import annotations
 import ipaddress
 import os
 import socket
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 from urllib.parse import urlsplit
 
 
@@ -31,8 +32,20 @@ class EndpointPolicy:
             raise ValueError("model endpoint must be an exact HTTP(S) origin/path without query")
         if parsed.username or parsed.password:
             raise ValueError("model endpoint cannot contain credentials")
-        addresses = {item[4][0] for item in socket.getaddrinfo(parsed.hostname, parsed.port or 443)}
+        return self.endpoint
+
+    def validate_resolved(
+        self,
+        resolver: Callable[..., Sequence[tuple[Any, ...]]] | None = None,
+    ) -> str:
+        """Resolve only at an explicit network boundary, never during config parsing."""
+        endpoint = self.validate()
+        if not self.allowed_addresses:
+            return endpoint
+        parsed = urlsplit(endpoint)
+        resolve = resolver or socket.getaddrinfo
+        addresses = {item[4][0] for item in resolve(parsed.hostname, parsed.port or 443)}
         normalized = {str(ipaddress.ip_address(address)) for address in addresses}
-        if self.allowed_addresses and not normalized <= self.allowed_addresses:
+        if not normalized <= self.allowed_addresses:
             raise ValueError("model endpoint DNS resolves outside the configured allowlist")
-        return self.endpoint.rstrip("/")
+        return endpoint

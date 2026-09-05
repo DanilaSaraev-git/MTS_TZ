@@ -343,6 +343,7 @@ class DocumentExtraction(ExecutionLease):
 class ReviewRunExecution(ExecutionLease):
     __tablename__ = "review_run_executions"
     run_id: Mapped[str] = mapped_column(String(36), unique=True)
+    value: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     __table_args__ = (
         ForeignKeyConstraint(
             ["organization_id", "workspace_id", "run_id"],
@@ -433,10 +434,22 @@ class DialogueTurn(Base):
     ordinal: Mapped[int] = mapped_column(Integer)
     state: Mapped[str] = mapped_column(String(32))
     value: Mapped[dict[str, Any]] = mapped_column(JSON)
+    active_generation_attempt_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     __table_args__ = (
         ForeignKeyConstraint(
             ["organization_id", "workspace_id", "dialogue_id"],
             ["finding_dialogues.organization_id", "finding_dialogues.workspace_id", "finding_dialogues.id"],
+        ),
+        ForeignKeyConstraint(
+            ["organization_id", "workspace_id", "id", "active_generation_attempt_id"],
+            [
+                "generation_attempts.organization_id",
+                "generation_attempts.workspace_id",
+                "generation_attempts.dialogue_turn_id",
+                "generation_attempts.id",
+            ],
+            name="dialogue_turn_active_generation_same_turn_fkey",
+            use_alter=True,
         ),
         UniqueConstraint("organization_id", "workspace_id", "dialogue_id", "ordinal"),
     )
@@ -453,6 +466,13 @@ class GenerationAttempt(ExecutionLease):
             ["dialogue_turns.organization_id", "dialogue_turns.workspace_id", "dialogue_turns.id"],
         ),
         UniqueConstraint("organization_id", "workspace_id", "dialogue_turn_id", "ordinal"),
+        UniqueConstraint(
+            "organization_id",
+            "workspace_id",
+            "dialogue_turn_id",
+            "id",
+            name="uq_generation_attempt_turn_identity",
+        ),
     )
 
 
@@ -543,7 +563,7 @@ class ReviewWorkItem(Base):
     execution_id: Mapped[str] = mapped_column(String(36), primary_key=True)
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     ordinal: Mapped[int] = mapped_column(Integer)
-    fragment_id: Mapped[str] = mapped_column(String(160))
+    fragment_id: Mapped[str | None] = mapped_column(String(160), nullable=True)
     state: Mapped[str] = mapped_column(String(32))
     value: Mapped[dict[str, Any]] = mapped_column(JSON)
     __table_args__ = (
@@ -564,17 +584,31 @@ class ModelAttempt(Base):
     __tablename__ = "model_attempts"
     organization_id: Mapped[str] = mapped_column(primary_key=True)
     workspace_id: Mapped[str] = mapped_column(primary_key=True)
-    work_item_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    work_item_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    generation_attempt_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     ordinal: Mapped[int] = mapped_column(Integer)
     state: Mapped[str] = mapped_column(String(32))
     value: Mapped[dict[str, Any]] = mapped_column(JSON)
     __table_args__ = (
+        CheckConstraint(
+            "(work_item_id IS NOT NULL) <> (generation_attempt_id IS NOT NULL)",
+            name="model_attempt_exactly_one_owner",
+        ),
         ForeignKeyConstraint(
             ["organization_id", "workspace_id", "work_item_id"],
             ["review_work_items.organization_id", "review_work_items.workspace_id", "review_work_items.id"],
+            name="model_attempt_work_item_fkey",
         ),
-        UniqueConstraint("organization_id", "workspace_id", "work_item_id", "ordinal"),
+        ForeignKeyConstraint(
+            ["organization_id", "workspace_id", "generation_attempt_id"],
+            [
+                "generation_attempts.organization_id",
+                "generation_attempts.workspace_id",
+                "generation_attempts.id",
+            ],
+            name="model_attempt_generation_attempt_fkey",
+        ),
     )
 
 
@@ -628,4 +662,24 @@ Index(
     DialogueTurn.dialogue_id,
     unique=True,
     postgresql_where=DialogueTurn.state.in_(["queued", "generating"]),
+)
+
+Index(
+    "uq_model_attempt_review_owner_ordinal",
+    ModelAttempt.organization_id,
+    ModelAttempt.workspace_id,
+    ModelAttempt.work_item_id,
+    ModelAttempt.ordinal,
+    unique=True,
+    postgresql_where=ModelAttempt.work_item_id.is_not(None),
+)
+
+Index(
+    "uq_model_attempt_generation_owner_ordinal",
+    ModelAttempt.organization_id,
+    ModelAttempt.workspace_id,
+    ModelAttempt.generation_attempt_id,
+    ModelAttempt.ordinal,
+    unique=True,
+    postgresql_where=ModelAttempt.generation_attempt_id.is_not(None),
 )

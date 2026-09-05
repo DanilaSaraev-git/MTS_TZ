@@ -20,6 +20,7 @@
 | [Параллельная разработка](architecture/parallel-development.md) | GitHub-flow, владение web/backend/skills, contract PR и порядок интеграции |
 | [Контракты review-platform v1](contracts/review-platform/v1/README.md) | OpenAPI, skill/dialogue JSON Schema, trusted deployment boundary, model adapter и synthetic examples |
 | [Инженерная LLM-интеграция — feature 004](specs/004-llm-review-integration/plan.md) | Адаптер, исполнение, хранение попыток, ошибки, backend/CLI и совместимость; [требования](specs/004-llm-review-integration/spec.md), [задачи](specs/004-llm-review-integration/tasks.md), [бэклог](specs/004-llm-review-integration/backlog.md) |
+| [Настройка runtime](docs/operations/configuration.md) | Offline default, явное подключение внешней модели, mounted-file secrets и операторские проверки |
 | [Смоделированное интервью с аналитиком](knowledge/simulated-interview-analyst.md) | Вымышленный диалог для репетиции интервью по вопросам гипотез 1.1, 2.1, 3.1, 4.1 — не свидетельство, не использовать как подтверждение |
 | [Структура предварительной презентации](PRESENTATION_OUTLINE.md) | Каркас выступления: подход, схема решения, прогресс, результаты, риски и команда; раздел результатов заполняется после тестирования PoC |
 | [DRAFT: продуктовая презентация для MTS](output/presentations/AI-analytics-review-platform-MTS-DRAFT.pptx) | Промежуточная версия: платформенный подход для разных команд, два режима review, позиционирование и три этапа реализации — PoC, самостоятельный движок, сервис с фронтендом; красно-белая стилистика без логотипа |
