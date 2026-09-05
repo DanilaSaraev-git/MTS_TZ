@@ -1,6 +1,0 @@
-{
-  "status": "confirmed",
-  "reason": "Расписание действительно нужно согласовать до разработки.",
-  "resolution": "Зафиксировать ежедневный запуск в 06:00 по Europe/Moscow.",
-  "expected_revision": 0
-}
