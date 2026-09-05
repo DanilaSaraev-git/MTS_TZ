@@ -268,10 +268,11 @@ class PostgresReviewExecutionStorage:
             ):
                 connection.rollback()
                 return None
-            if not connection.execute(
+            deadline_row = connection.execute(
                 "SELECT clock_timestamp() < (%s->>'deadline_at')::timestamptz",
                 (Jsonb(row["value"]),),
-            ).fetchone()["?column?"]:
+            ).fetchone()
+            if deadline_row is None or not deadline_row["?column?"]:
                 connection.rollback()
                 return None
             started_at = datetime.now(UTC)
@@ -1748,7 +1749,7 @@ class PostgresReviewPlatform:
             if row["state"] in {"completed", "failed", "cancelled"}:
                 raise Conflict("run_terminal", "A terminal review run cannot be cancelled.")
             cancelled_at = utc_now()
-            cancelled = row["value"] | {
+            cancelled: dict[str, Any] = cast(dict[str, Any], row["value"]) | {
                 "state": "cancelled",
                 "cancel_requested_at": wire_time(cancelled_at),
                 "finished_at": wire_time(cancelled_at),
