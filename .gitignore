@@ -4,3 +4,29 @@ test_info.md
 
 # Local macOS metadata
 .DS_Store
+
+# Virtual environments and language caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+
+# Local tooling and reproducible work products
+.serena/
+.cache/
+/tmp/
+/output/
+*.log
+
+# Model artifacts and downloads
+models/
+model-cache/
+.huggingface/
+*.gguf
+*.safetensors
+*.ckpt
+*.onnx

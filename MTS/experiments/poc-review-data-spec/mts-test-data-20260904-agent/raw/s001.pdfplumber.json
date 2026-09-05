@@ -1,0 +1,630 @@
+{
+  "schema_version": 1,
+  "source_id": "s001",
+  "pages": [
+    {
+      "page_number": 1,
+      "width": 595.32,
+      "height": 841.92,
+      "text": "Описание:\nПример данных состоит из 3 примеров документов:\n1. Описание потоков данных.\n2. Описание данных системы источника.\n3. Описание витрины-агрегата.\nВсе данные в документах обезличены.\nОсновная цель – разработать систему, которая бы могла от лица аналитика,\nразработчика или тестировщика анализировать документацию и указывать\nместа, которые нужно дополнить/скорректировать.\nОсновные места, на которые надо обратить внимание:\n1. Описание расположения источников и Kafka-кластеров.\n2. Описание полей и логики их расчета.\n3. Описание фильтрации данных.\n4. Описание обновления и объема данных.\nТестирование работы алгоритма будет проходить на новом документе по\nописанию витрины-агрегата.\nРабота носит творческий характер и направлена в целом на развитие\nкомпетенций в сфере сопровождения документацией объектов данных.\nМетрика – качественный показатель указания на дополняемые моменты.\nВ случае необходимости, документацию для обучения можно брать любую\nдругую – например, из открытого доступа.",
+      "tables": []
+    },
+    {
+      "page_number": 2,
+      "width": 595.32,
+      "height": 841.92,
+      "text": "Общие сведения\nМодуль обеспечивает получение сведений о текущем и историческом\nместоположении абонентских устройств в реальном времени. Обработка\nоснована на сигнальном трафике сетей радиодоступа (3G/4G), поступающем\nот платформы PROVIDER_GEO.\nРешаемая проблема\nЗамена устаревшей технологии геолокации абонентов по данным\nрадиоинтерфейса. Цель — создание отечественного решения с потоковой\nобработкой и интеграцией в Data Lake.\nПродуктовые метрики\n Задержка: < 1 мин\n Пропускная способность: до 100 000 событий/сек\n Точность локации: 3G — 50–500 м, 4G — 10–100 м\nЗаказчики\nBigData Unit X\nНефункциональные требования\n Инкрементная загрузка по часовым партициям\n Географическое разбиение по регионам\n Стриминг в реальном времени (задержка ≈ 0 сек)\n Хранение: Kafka — 24 ч, RAW-слой — 30 дней\nСистемы-источники\n PROVIDER_GEO — мультивендорная платформа агрегации событий\n3G/4G и MDT.\nСхема потоков данных\nPROVIDER_GEO → Kafka (топики по регионам) → Apache Flink → RAW →\nDDS → ADDS → CDM\n Мониторинг: LINK_DASHBOARD_GEO\n Исходный код: LINK_GITLAB_PROJECT\nJIRA\nPROJECT-XX123 — Описание потоковой обработки геоданных\nLINK_JIRA_TASK\nКоманда\n USER_A — Product Owner\n USER_B — Data Analyst\n USER_C — Backend Developer",
+      "tables": []
+    },
+    {
+      "page_number": 3,
+      "width": 595.32,
+      "height": 841.92,
+      "text": "Источники и приемники данных\nPROVIDER_GEO → Kafka (24 часа хранения):\nРегион Топик 3G Топик 4G\nЦентр TOPIC_GEO3G_CENTRAL TOPIC_GEO4G_CENTRAL\nДальний Восток TOPIC_GEO3G_EAST TOPIC_GEO4G_EAST\nСеверо-Запад TOPIC_GEO3G_NW TOPIC_GEO4G_NW\nПоволжье TOPIC_GEO3G_VOLGA TOPIC_GEO4G_VOLGA\nСибирь TOPIC_GEO3G_SIB TOPIC_GEO4G_SIB\nЮг TOPIC_GEO3G_SOUTH TOPIC_GEO4G_SOUTH\nУрал TOPIC_GEO3G_URAL TOPIC_GEO4G_URAL\nПриемники:\nСлой Таблица Описание\nRAW TABLE_GEO_RAW_3G Данные по 3G (необработанные)\nRAW TABLE_GEO_RAW_4G Данные по 4G (необработанные)\nDDS TABLE_GEO_DDS_DETAILED Детальные события геолокации\nADDS TABLE_GEO_ADDS_AGG Агрегированные события\nCDM TABLE_GEO_CDM_INTERVALS Геоинтервалы по абонентам\nСтруктура данных\nТаблица: TABLE_GEO_RAW_3G\nПоле Тип данных Описание\nFIELD_REGION string Регион\nFIELD_DATE_EVENT date Дата события\nFIELD_HOUR int Час события (партиция)\nFIELD_IMSI string IMSI\nFIELD_MSISDN string MSISDN\nFIELD_IMEI string IMEI\nFIELD_LAT double Широта геопозиции\nFIELD_LON double Долгота геопозиции\nFIELD_RADIUS int Радиус точности (метры)\nFIELD_CELL_START long ID начальной базовой станции\nFIELD_CELL_END long ID конечной БС\nFIELD_TIME_START long Время начала события\nFIELD_TIME_END long Время окончания события\nFIELD_LOC_ACCURACY int Точность локации (метры)\nFIELD_VENDOR string Вендор оборудования БС\nТаблица: TABLE_GEO_RAW_4G\nПоле Тип данных Описание\nFIELD_REGION string Регион\nFIELD_DATE_EVENT date Дата события\nFIELD_HOUR int Час события (партиция)\nFIELD_IMSI string IMSI\nFIELD_MSISDN string MSISDN",
+      "tables": [
+        {
+          "table_number": 1,
+          "bbox": [
+            85.344,
+            107.65999999999997,
+            552.9400200000001,
+            222.14
+          ],
+          "rows": [
+            [
+              "Регион",
+              "Топик 3G",
+              "Топик 4G"
+            ],
+            [
+              "Центр",
+              "TOPIC_GEO3G_CENTRAL",
+              "TOPIC_GEO4G_CENTRAL"
+            ],
+            [
+              "Дальний Восток",
+              "TOPIC_GEO3G_EAST",
+              "TOPIC_GEO4G_EAST"
+            ],
+            [
+              "Северо-Запад",
+              "TOPIC_GEO3G_NW",
+              "TOPIC_GEO4G_NW"
+            ],
+            [
+              "Поволжье",
+              "TOPIC_GEO3G_VOLGA",
+              "TOPIC_GEO4G_VOLGA"
+            ],
+            [
+              "Сибирь",
+              "TOPIC_GEO3G_SIB",
+              "TOPIC_GEO4G_SIB"
+            ],
+            [
+              "Юг",
+              "TOPIC_GEO3G_SOUTH",
+              "TOPIC_GEO4G_SOUTH"
+            ],
+            [
+              "Урал",
+              "TOPIC_GEO3G_URAL",
+              "TOPIC_GEO4G_URAL"
+            ]
+          ]
+        },
+        {
+          "table_number": 2,
+          "bbox": [
+            85.344,
+            273.409995,
+            552.9400200000001,
+            359.21000999999995
+          ],
+          "rows": [
+            [
+              "Слой",
+              "Таблица",
+              "Описание"
+            ],
+            [
+              "RAW",
+              "TABLE_GEO_RAW_3G",
+              "Данные по 3G (необработанные)"
+            ],
+            [
+              "RAW",
+              "TABLE_GEO_RAW_4G",
+              "Данные по 4G (необработанные)"
+            ],
+            [
+              "DDS",
+              "TABLE_GEO_DDS_DETAILED",
+              "Детальные события геолокации"
+            ],
+            [
+              "ADDS",
+              "TABLE_GEO_ADDS_AGG",
+              "Агрегированные события"
+            ],
+            [
+              "CDM",
+              "TABLE_GEO_CDM_INTERVALS",
+              "Геоинтервалы по абонентам"
+            ]
+          ]
+        },
+        {
+          "table_number": 3,
+          "bbox": [
+            85.344,
+            435.77000999999996,
+            552.9400200000001,
+            664.6600099999999
+          ],
+          "rows": [
+            [
+              "Поле",
+              "Тип данных",
+              "Описание"
+            ],
+            [
+              "FIELD_REGION",
+              "string",
+              "Регион"
+            ],
+            [
+              "FIELD_DATE_EVENT",
+              "date",
+              "Дата события"
+            ],
+            [
+              "FIELD_HOUR",
+              "int",
+              "Час события (партиция)"
+            ],
+            [
+              "FIELD_IMSI",
+              "string",
+              "IMSI"
+            ],
+            [
+              "FIELD_MSISDN",
+              "string",
+              "MSISDN"
+            ],
+            [
+              "FIELD_IMEI",
+              "string",
+              "IMEI"
+            ],
+            [
+              "FIELD_LAT",
+              "double",
+              "Широта геопозиции"
+            ],
+            [
+              "FIELD_LON",
+              "double",
+              "Долгота геопозиции"
+            ],
+            [
+              "FIELD_RADIUS",
+              "int",
+              "Радиус точности (метры)"
+            ],
+            [
+              "FIELD_CELL_START",
+              "long",
+              "ID начальной базовой станции"
+            ],
+            [
+              "FIELD_CELL_END",
+              "long",
+              "ID конечной БС"
+            ],
+            [
+              "FIELD_TIME_START",
+              "long",
+              "Время начала события"
+            ],
+            [
+              "FIELD_TIME_END",
+              "long",
+              "Время окончания события"
+            ],
+            [
+              "FIELD_LOC_ACCURACY",
+              "int",
+              "Точность локации (метры)"
+            ],
+            [
+              "FIELD_VENDOR",
+              "string",
+              "Вендор оборудования БС"
+            ]
+          ]
+        },
+        {
+          "table_number": 4,
+          "bbox": [
+            85.344,
+            690.4600100000001,
+            552.9400200000001,
+            776.2559799999999
+          ],
+          "rows": [
+            [
+              "Поле",
+              "Тип данных",
+              "Описание"
+            ],
+            [
+              "FIELD_REGION",
+              "string",
+              "Регион"
+            ],
+            [
+              "FIELD_DATE_EVENT",
+              "date",
+              "Дата события"
+            ],
+            [
+              "FIELD_HOUR",
+              "int",
+              "Час события (партиция)"
+            ],
+            [
+              "FIELD_IMSI",
+              "string",
+              "IMSI"
+            ],
+            [
+              "FIELD_MSISDN",
+              "string",
+              "MSISDN"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 4,
+      "width": 595.32,
+      "height": 841.92,
+      "text": "FIELD_IMEI string IMEI\nFIELD_LAT double Широта геопозиции\nFIELD_LON double Долгота геопозиции\nFIELD_RADIUS int Радиус точности (метры)\nFIELD_CELL_START long ID начальной БС\nFIELD_CELL_END long ID конечной БС\nFIELD_TIME_START long Время начала события (Unix-\nвремя)\nFIELD_TIME_END long Время окончания события\nFIELD_SERVICE_TYPE int Тип формата связи (услуга)\nДополнительная информация\nДокументы:\n «Описание протоколов сигнальных сообщений в 3G/4G»\n «Форматы MDT и Measurement Trigger»\nАлгоритмы: обработка хэндоверов, геоинтервалов, работа с RNC/eNodeB.",
+      "tables": [
+        {
+          "table_number": 1,
+          "bbox": [
+            85.344,
+            56.879999999999995,
+            552.9400200000001,
+            199.45999999999992
+          ],
+          "rows": [
+            [
+              "FIELD_IMEI",
+              "string",
+              "IMEI"
+            ],
+            [
+              "FIELD_LAT",
+              "double",
+              "Широта геопозиции"
+            ],
+            [
+              "FIELD_LON",
+              "double",
+              "Долгота геопозиции"
+            ],
+            [
+              "FIELD_RADIUS",
+              "int",
+              "Радиус точности (метры)"
+            ],
+            [
+              "FIELD_CELL_START",
+              "long",
+              "ID начальной БС"
+            ],
+            [
+              "FIELD_CELL_END",
+              "long",
+              "ID конечной БС"
+            ],
+            [
+              "FIELD_TIME_START",
+              "long",
+              "Время начала события (Unix-\nвремя)"
+            ],
+            [
+              "FIELD_TIME_END",
+              "long",
+              "Время окончания события"
+            ],
+            [
+              "FIELD_SERVICE_TYPE",
+              "int",
+              "Тип формата связи (услуга)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 5,
+      "width": 595.32,
+      "height": 841.92,
+      "text": "Общие сведения\nПлатформа обслуживает prepaid-абонентов. Файлы, поступающие с системы,\nсодержат телеком-события абонентов, заведённых на платформе.\nЗаказчики\nBigData\nСистемы-источники\nPI_System — система сбора CDR-файлов с сетевых элементов подвижной\nсвязи.\nКоманда\n USER_A — Product Owner\n USER_B — Data Analyst\n USER_C — Backend Developer\nИсточники и приёмники данных\nИсточники (CDR в формате CSV, сжатые gzip)\nДанные поступают в Kafka по топикам, соответствующим регионам:\nРегион Kafka-топик SFTP-папка HDFS\nЦентр TOPIC_MSCP_CDR_CENTRAL Папка\nДальний Восток TOPIC_MSCP_CDR_EAST Папка\nСибирь TOPIC_MSCP_CDR_SIB Папка\nСеверо-Запад TOPIC_MSCP_CDR_NW Папка\nПоволжье TOPIC_MSCP_CDR_VOLGA Папка\nЮг TOPIC_MSCP_CDR_SOUTH Папка\nПриёмники:\n TABLE_MSCP_RAW_KFK — необработанные CDR из Kafka (ORC)\n TABLE_MSCP_RAW_SFTP — необработанные CDR из SFTP (CSV)\nАлгоритм обработки потока\nШаг 1. Фильтрация данных\nУчитываются только события, произошедшие не ранее 7 дней назад и не\nпозже 2 часов вперёд от текущего времени (на стороне обработки).\nШаг 2. Преобразования на потоке\nОчистка числовых строк от лидирующих нулей:\nИз этих полей удаляются лидирующие нули до первого значимого символа.\nКоррекция часового пояса для временных меток:\n Для региона east: 7 часов\n Для регионов central, nw, volga, south: 3 часа",
+      "tables": [
+        {
+          "table_number": 1,
+          "bbox": [
+            85.34400000000001,
+            376.61000999999993,
+            538.7799899999999,
+            476.71000999999995
+          ],
+          "rows": [
+            [
+              "Регион",
+              "Kafka-топик",
+              "SFTP-папка HDFS"
+            ],
+            [
+              "Центр",
+              "TOPIC_MSCP_CDR_CENTRAL",
+              "Папка"
+            ],
+            [
+              "Дальний Восток",
+              "TOPIC_MSCP_CDR_EAST",
+              "Папка"
+            ],
+            [
+              "Сибирь",
+              "TOPIC_MSCP_CDR_SIB",
+              "Папка"
+            ],
+            [
+              "Северо-Запад",
+              "TOPIC_MSCP_CDR_NW",
+              "Папка"
+            ],
+            [
+              "Поволжье",
+              "TOPIC_MSCP_CDR_VOLGA",
+              "Папка"
+            ],
+            [
+              "Юг",
+              "TOPIC_MSCP_CDR_SOUTH",
+              "Папка"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 6,
+      "width": 595.32,
+      "height": 841.92,
+      "text": " Примечание: регион sib соответствует east.\nСтруктура данных\nТаблица: TABLE_MSCP_RAW_KFK\n(из Kafka, ORC-формат, 15 полей)\nПоле Тип данных Описание\nFIELD_REGION string Название региона\nFIELD_BIZ_DATE date Бизнес-дата события\nFIELD_HOUR int Часовая партиция\nFIELD_IMSI bigint IMSI\nFIELD_CALLING_NUMBER string Номер вызывающего абонента\nFIELD_CALLED_NUMBER string Номер вызываемого абонента\nFIELD_CALL_START_TIME timestamp Время начала вызова\nFIELD_CALL_END_TIME timestamp Время окончания вызова\nFIELD_CALL_DURATION int Длительность вызова (сек)\nFIELD_IS_ROAMING string Признак роуминга (true/false)\nFIELD_OL_SERVICE_TYPE tinyint Тип сервиса\nFIELD_TIME_ZONE_SHIFT string Сдвиг часового пояса\nFIELD_TIMEZONE_CALC int Вычисленный сдвиг в минутах\nFIELD_BALANCE double Текущий баланс абонента\nFIELD_BALANCE_EXPIRE timestamp Срок истечения баланса\nFAQ (обобщённо, без реальных ссылок)\nТип события (голос, SMS, данные):\nОпределяется по FIELD_OL_SERVICE_TYPE (см. выше).\nОпределение технологии связи (2G/3G/4G/5G):\nДля data-трафика — по полю radioAccessTechnology.\nДля голоса и SMS — косвенно: по наличию/отсутствию полей геолокации\n(например, CELL_ID, LAC).",
+      "tables": [
+        {
+          "table_number": 1,
+          "bbox": [
+            85.344,
+            151.45999999999992,
+            524.6200200000001,
+            380.3300099999999
+          ],
+          "rows": [
+            [
+              "Поле",
+              "Тип данных",
+              "Описание"
+            ],
+            [
+              "FIELD_REGION",
+              "string",
+              "Название региона"
+            ],
+            [
+              "FIELD_BIZ_DATE",
+              "date",
+              "Бизнес-дата события"
+            ],
+            [
+              "FIELD_HOUR",
+              "int",
+              "Часовая партиция"
+            ],
+            [
+              "FIELD_IMSI",
+              "bigint",
+              "IMSI"
+            ],
+            [
+              "FIELD_CALLING_NUMBER",
+              "string",
+              "Номер вызывающего абонента"
+            ],
+            [
+              "FIELD_CALLED_NUMBER",
+              "string",
+              "Номер вызываемого абонента"
+            ],
+            [
+              "FIELD_CALL_START_TIME",
+              "timestamp",
+              "Время начала вызова"
+            ],
+            [
+              "FIELD_CALL_END_TIME",
+              "timestamp",
+              "Время окончания вызова"
+            ],
+            [
+              "FIELD_CALL_DURATION",
+              "int",
+              "Длительность вызова (сек)"
+            ],
+            [
+              "FIELD_IS_ROAMING",
+              "string",
+              "Признак роуминга (true/false)"
+            ],
+            [
+              "FIELD_OL_SERVICE_TYPE",
+              "tinyint",
+              "Тип сервиса"
+            ],
+            [
+              "FIELD_TIME_ZONE_SHIFT",
+              "string",
+              "Сдвиг часового пояса"
+            ],
+            [
+              "FIELD_TIMEZONE_CALC",
+              "int",
+              "Вычисленный сдвиг в минутах"
+            ],
+            [
+              "FIELD_BALANCE",
+              "double",
+              "Текущий баланс абонента"
+            ],
+            [
+              "FIELD_BALANCE_EXPIRE",
+              "timestamp",
+              "Срок истечения баланса"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 7,
+      "width": 595.32,
+      "height": 841.92,
+      "text": "Общие сведения\nАгрегат по устройствам абонентов: ежемесячная сводка по вендорам\nустройств и регионам пользователей.\nБизнес-требования\nНазвание таблицы: TABLE_AGG_DEVICES\nКластер: CLUSTER\nСхема: SCHEMA_CDM_NETS\nСистемы-источники\nIUM — IN-платформа (сбор событий интернет-трафика, звонков и SMS)\nСпособ загрузки\nИнкремент\nРегламент\nЕжемесячно (1 раз в месяц)\nГлубина данных\nС 01.05.2023\nОбязательно загрузить исторические данные.\nКоманда\n PO: USER_A\n TechPM: USER_B\n Аналитик: USER_C\n Разработчик: USER_D\n QA: USER_E\nЗаказчики\nMVNO Unit X\n1. Источники данных\nСхема Таблица Описание\nSCHEMA_RAW TABLE_IUM_RAW_PS Необработанные данные по интернет-\nтрафику (GPRS)\nSCHEMA_RAW TABLE_IUM_RAW_MS Необработанные данные по звонкам и\nSMS\nSCHEMA_ADDS TABLE_BS_REF Справочник базовых станций\nSCHEMA_DIC TABLE_REGION_REF Справочник регионов\nSCHEMA_DIC TABLE_DEVICE_REF Справочник устройств\n2. Структура данных CDM\nТаблица: TABLE_AGG_DEVICES",
+      "tables": [
+        {
+          "table_number": 1,
+          "bbox": [
+            85.344,
+            600.3100099999999,
+            567.11999,
+            713.8600099999999
+          ],
+          "rows": [
+            [
+              "Схема",
+              "Таблица",
+              "Описание"
+            ],
+            [
+              "SCHEMA_RAW",
+              "TABLE_IUM_RAW_PS",
+              "Необработанные данные по интернет-\nтрафику (GPRS)"
+            ],
+            [
+              "SCHEMA_RAW",
+              "TABLE_IUM_RAW_MS",
+              "Необработанные данные по звонкам и\nSMS"
+            ],
+            [
+              "SCHEMA_ADDS",
+              "TABLE_BS_REF",
+              "Справочник базовых станций"
+            ],
+            [
+              "SCHEMA_DIC",
+              "TABLE_REGION_REF",
+              "Справочник регионов"
+            ],
+            [
+              "SCHEMA_DIC",
+              "TABLE_DEVICE_REF",
+              "Справочник устройств"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 8,
+      "width": 595.32,
+      "height": 841.92,
+      "text": "Номе Поле Тип Описание Комментарий\nр данных\n1 FIELD_REGION_NA string Название Определяется\nME региона как последнее значение region_n\name за месяц для абонента:\nсначала по (lac, cell), затем\nfallback-логика (см. алгоритм).\n2 FIELD_VENDOR_N string Наименован substring(imei, 1, 8) =\nAME ие вендора tac → vendor_name.\nустройства\n3 FIELD_USERS_CNT bigint Уникальное count(distinct FIELD_IMSI)\nколичество\nабонентов\n(IMSI)\n4 FIELD_PROC_TS timesta Дата/время Метка обработки DAG\nmp создания\nагрегата\n5 FIELD_BIZ_DATE date Бизнес-дата Пример: для периода\n(1-е число 01.07.2023–31.07.2023 → 2023-\nмесяца, за 07-01\nкоторый\nформируетс\nя агрегат)\nАлгоритм расчёта\nШаг 1. Выбор пользователей\nБерутся все уникальные FIELD_IMSI из:\n TABLE_IUM_RAW_MS (SMS + звонки)\n TABLE_IUM_RAW_PS (GPRS) за период: FIELD_BIZ_DATE (месяц).\nШаг 2. Определение вендора\nДля каждого FIELD_IMSI берётся FIELD_IMEI (последний по времени за\nмесяц).\nИзвлекается tac = substring(imei, 1, 8).\nПрисоединяется FIELD_VENDOR_NAME по tac из TABLE_DEVICE_REF.\nШаг 3. Определение региона\nДля каждого FIELD_IMSI за месяц:\nНаходится последняя запись с\nненулевыми FIELD_LAC и FIELD_CELL_ID (по FIELD_TIME_STAMP).\nСопоставление с TABLE_BS_REF: приоритет: (lac, cell_id)\n по lac (последняя актуальная запись за месяц)\n по cell_id только для 4G (FIELD_CELL_GEN = 4)",
+      "tables": [
+        {
+          "table_number": 1,
+          "bbox": [
+            85.344,
+            56.879999999999995,
+            552.7000200000001,
+            377.33000999999996
+          ],
+          "rows": [
+            [
+              "Номе\nр",
+              "Поле",
+              "Тип\nданных",
+              "Описание",
+              "Комментарий"
+            ],
+            [
+              "1",
+              "FIELD_REGION_NA\nME",
+              "string",
+              "Название\nрегиона",
+              "Определяется\nкак последнее значение region_n\name за месяц для абонента:\nсначала по (lac, cell), затем\nfallback-логика (см. алгоритм)."
+            ],
+            [
+              "2",
+              "FIELD_VENDOR_N\nAME",
+              "string",
+              "Наименован\nие вендора\nустройства",
+              "substring(imei, 1, 8) =\ntac → vendor_name."
+            ],
+            [
+              "3",
+              "FIELD_USERS_CNT",
+              "bigint",
+              "Уникальное\nколичество\nабонентов\n(IMSI)",
+              "count(distinct FIELD_IMSI)"
+            ],
+            [
+              "4",
+              "FIELD_PROC_TS",
+              "timesta\nmp",
+              "Дата/время\nсоздания\nагрегата",
+              "Метка обработки DAG"
+            ],
+            [
+              "5",
+              "FIELD_BIZ_DATE",
+              "date",
+              "Бизнес-дата\n(1-е число\nмесяца, за\nкоторый\nформируетс\nя агрегат)",
+              "Пример: для периода\n01.07.2023–31.07.2023 → 2023-\n07-01"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "page_number": 9,
+      "width": 595.32,
+      "height": 841.92,
+      "text": " если lac = 0 → джойн только по cell_id (4G)\n если cell = 0 → джойн только по lac\nУбираются дубли: на выходе — одна region_code на абонента.\nПрисоединение FIELD_REGION_NAME из TABLE_REGION_REF.\nШаг 4. Агрегация\nГруппировка по:\n FIELD_REGION_NAME\n FIELD_VENDOR_NAME\n FIELD_USERS_CNT = count(distinct FIELD_IMSI)\nШаг 5. Запись в CDM\nТребования к агрегату\nТребование Значение\nРегламент расчёта Ежемесячно\nПериод агрегации Календарный месяц\nГлубина данных Исторические данные — с 01.05.2023\nРегиональная агрегация Да (по региону)\nЧасовой пояс UTC\nПоле партиционирования FIELD_BIZ_DATE\nОбновление Только полная перезагрузка месяца\n(без upsert)",
+      "tables": [
+        {
+          "table_number": 1,
+          "bbox": [
+            85.344,
+            309.17001,
+            545.8599899999999,
+            457.99001
+          ],
+          "rows": [
+            [
+              "Требование",
+              "Значение"
+            ],
+            [
+              "Регламент расчёта",
+              "Ежемесячно"
+            ],
+            [
+              "Период агрегации",
+              "Календарный месяц"
+            ],
+            [
+              "Глубина данных",
+              "Исторические данные — с 01.05.2023"
+            ],
+            [
+              "Региональная агрегация",
+              "Да (по региону)"
+            ],
+            [
+              "Часовой пояс",
+              "UTC"
+            ],
+            [
+              "Поле партиционирования",
+              "FIELD_BIZ_DATE"
+            ],
+            [
+              "Обновление",
+              "Только полная перезагрузка месяца\n(без upsert)"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

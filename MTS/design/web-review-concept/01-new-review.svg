@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PROTOTYPE — throwaway visual source for the web review UI. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">AI Review — новое ревью с открытой панелью контекста</title>
+  <desc id="desc">Светлый корпоративный интерфейс в красной цветовой теме: верхняя навигация, боковая панель артефактов и форма загрузки технического задания.</desc>
+  <defs>
+    <style>
+      .ui { font-family: Arial, "Segoe UI", sans-serif; fill: #1D2125; }
+      .muted { fill: #44546F; }
+      .subtle { fill: #626F86; }
+      .red { fill: #E30611; }
+      .red-dark { fill: #7A0D16; }
+      .label { font-size: 12px; font-weight: 700; letter-spacing: .2px; }
+      .meta { font-size: 12px; }
+      .body { font-size: 14px; }
+      .body-strong { font-size: 14px; font-weight: 700; }
+      .section { font-size: 16px; font-weight: 700; }
+      .title { font-size: 28px; font-weight: 700; }
+      .nav { font-size: 14px; font-weight: 600; }
+      .tiny { font-size: 11px; }
+      .icon { fill: none; stroke: #44546F; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+      .icon-light { fill: none; stroke: #FFFFFF; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+    <filter id="drawerShadow" x="-20%" y="-5%" width="150%" height="110%">
+      <feDropShadow dx="8" dy="0" stdDeviation="10" flood-color="#091E42" flood-opacity="0.14"/>
+    </filter>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#091E42" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- App background -->
+  <rect width="1440" height="900" fill="#F1F2F4"/>
+
+  <!-- Top navigation -->
+  <rect x="0" y="0" width="1440" height="56" fill="#FFFFFF"/>
+  <line x1="0" y1="55.5" x2="1440" y2="55.5" stroke="#DCDFE4"/>
+  <rect x="16" y="14" width="28" height="28" rx="4" fill="#E30611"/>
+  <text x="30" y="33" text-anchor="middle" class="ui" font-size="12" font-weight="700" fill="#FFFFFF">AR</text>
+  <text x="56" y="35" class="ui" font-size="16" font-weight="700">AI Review</text>
+  <line x1="157" y1="14" x2="157" y2="42" stroke="#DCDFE4"/>
+
+  <!-- Tenant selector -->
+  <rect x="174" y="10" width="194" height="36" rx="4" fill="#FFFFFF" stroke="#8590A2"/>
+  <rect x="186" y="18" width="20" height="20" rx="3" fill="#FFF0F1"/>
+  <text x="196" y="32" text-anchor="middle" class="ui" font-size="9" font-weight="700" fill="#B80D18">M</text>
+  <text x="216" y="33" class="ui nav">MTS / NET</text>
+  <path d="M346 24l5 5 5-5" class="icon"/>
+
+  <!-- Main nav -->
+  <text x="430" y="34" class="ui nav">Ревью</text>
+  <rect x="412" y="53" width="74" height="3" fill="#E30611"/>
+  <text x="523" y="34" class="ui nav muted">Профили</text>
+  <text x="616" y="34" class="ui nav muted">Команда</text>
+
+  <!-- Review status -->
+  <text x="1030" y="33" class="ui meta subtle">Статус AI-ревью</text>
+  <rect x="1144" y="14" width="122" height="28" rx="14" fill="#F1F2F4" stroke="#B7BEC8"/>
+  <circle cx="1161" cy="28" r="5" fill="#8590A2"/>
+  <text x="1173" y="33" class="ui label muted">Не запущено</text>
+
+  <!-- Header utilities -->
+  <circle cx="1320" cy="28" r="16" fill="#F1F2F4"/>
+  <text x="1320" y="33" text-anchor="middle" class="ui body-strong muted">?</text>
+  <circle cx="1372" cy="28" r="16" fill="#7A0D16"/>
+  <text x="1372" y="33" text-anchor="middle" class="ui" font-size="11" font-weight="700" fill="#FFFFFF">АИ</text>
+
+  <!-- Dark utility rail -->
+  <rect x="0" y="56" width="56" height="844" fill="#7A0D16"/>
+  <rect x="8" y="72" width="40" height="40" rx="5" fill="#FFFFFF"/>
+  <path d="M28 82v20M18 92h20" stroke="#7A0D16" stroke-width="2" stroke-linecap="round"/>
+
+  <circle cx="28" cy="140" r="10" class="icon-light" opacity="0.75"/>
+  <path d="M28 134v7l5 3" class="icon-light" opacity="0.75"/>
+
+  <path d="M18 174h20v17H18zM22 170h12l2 4H20z" class="icon-light" opacity="0.75"/>
+
+  <rect x="8" y="208" width="40" height="40" rx="5" fill="#5B0710"/>
+  <path d="M20 219h16v16H20zM24 215h8l2 4H22z" class="icon-light"/>
+  <rect x="52" y="216" width="4" height="24" fill="#FFFFFF"/>
+
+  <path d="M18 274h20M18 280h14M18 286h18" class="icon-light" opacity="0.75"/>
+  <circle cx="28" cy="838" r="9" class="icon-light" opacity="0.75"/>
+  <path d="M28 825v4M28 847v4M15 838h4M37 838h4" class="icon-light" opacity="0.75"/>
+  <circle cx="28" cy="878" r="14" fill="#FFFFFF" opacity="0.16"/>
+  <text x="28" y="882" text-anchor="middle" class="ui tiny" font-weight="700" fill="#FFFFFF">АИ</text>
+
+  <!-- Main page -->
+  <text x="456" y="91" class="ui meta subtle">Ревью  /  Новое ревью</text>
+  <text x="456" y="132" class="ui title">Новое ревью</text>
+  <text x="456" y="162" class="ui body muted">Загрузите готовое ТЗ и проверьте контекст, который получит агент.</text>
+
+  <!-- Form surface -->
+  <rect x="456" y="190" width="936" height="574" rx="6" fill="#FFFFFF" stroke="#DCDFE4" filter="url(#softShadow)"/>
+
+  <!-- Document section -->
+  <text x="480" y="226" class="ui section">Документ на проверку</text>
+  <text x="480" y="250" class="ui body muted">Один документ — один запуск. Исходный файл останется без изменений.</text>
+
+  <rect x="480" y="272" width="888" height="88" rx="4" fill="#FAFBFC" stroke="#8590A2"/>
+  <!-- PDF icon -->
+  <path d="M500 290h27l9 9v43h-36z" fill="#FFF0F1" stroke="#E30611"/>
+  <path d="M527 290v10h9" fill="none" stroke="#E30611"/>
+  <text x="518" y="326" text-anchor="middle" class="ui tiny" font-weight="700" fill="#B80D18">PDF</text>
+  <text x="552" y="306" class="ui body-strong">Тестовые данные.pdf</text>
+  <text x="552" y="331" class="ui meta muted">PDF · 9 страниц · 321 КБ · 3 обезличенных примера</text>
+  <circle cx="1112" cy="316" r="10" fill="#DCFFF1"/>
+  <path d="M1107 316l4 4 7-8" fill="none" stroke="#216E4E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1130" y="321" class="ui body-strong" fill="#216E4E">Готово</text>
+  <rect x="1207" y="296" width="112" height="40" rx="4" fill="#FFFFFF" stroke="#8590A2"/>
+  <text x="1263" y="321" text-anchor="middle" class="ui body-strong muted">Заменить</text>
+  <path d="M1340 304l10 10M1350 304l-10 10" class="icon"/>
+  <text x="480" y="389" class="ui meta subtle">Поддерживаются PDF с текстовым слоем, MD и TXT.</text>
+  <line x1="480" y1="420" x2="1368" y2="420" stroke="#DCDFE4"/>
+
+  <!-- Parameters -->
+  <text x="480" y="458" class="ui section">Параметры проверки</text>
+
+  <text x="480" y="490" class="ui label muted">Профиль проверки</text>
+  <rect x="480" y="502" width="420" height="40" rx="4" fill="#FFFFFF" stroke="#8590A2"/>
+  <text x="494" y="527" class="ui body">MTS NET — черновой профиль PoC</text>
+  <path d="M878 517l5 5 5-5" class="icon"/>
+  <text x="480" y="564" class="ui meta subtle">Роль агента: разработчик потоков данных</text>
+
+  <text x="924" y="490" class="ui label muted">Контекст агента</text>
+  <rect x="924" y="502" width="420" height="40" rx="4" fill="#FFF7F7" stroke="#E30611"/>
+  <circle cx="944" cy="522" r="8" fill="#E30611"/>
+  <path d="M940 522l3 3 5-6" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="960" y="527" class="ui body-strong">4 материала подключено</text>
+  <text x="1286" y="527" text-anchor="end" class="ui body-strong" fill="#B80D18">Панель открыта</text>
+  <text x="924" y="564" class="ui meta subtle">Правила команды, шаблон и материалы текущего запуска</text>
+
+  <text x="480" y="604" class="ui label muted">Что проверяем</text>
+  <g class="ui meta">
+    <rect x="480" y="616" width="151" height="28" rx="4" fill="#F1F2F4"/><text x="492" y="635">Источники и Kafka</text>
+    <rect x="639" y="616" width="138" height="28" rx="4" fill="#F1F2F4"/><text x="651" y="635">Поля и расчёты</text>
+    <rect x="785" y="616" width="105" height="28" rx="4" fill="#F1F2F4"/><text x="797" y="635">Фильтрация</text>
+    <rect x="898" y="616" width="225" height="28" rx="4" fill="#F1F2F4"/><text x="910" y="635">Обновление и объём данных</text>
+  </g>
+
+  <line x1="480" y1="670" x2="1368" y2="670" stroke="#DCDFE4"/>
+  <text x="480" y="699" class="ui meta muted">Агент подготовит адресные замечания с фрагментом, причиной</text>
+  <text x="480" y="717" class="ui meta muted">и вопросом для уточнения.</text>
+  <rect x="1067" y="690" width="92" height="40" rx="4" fill="#FFFFFF" stroke="#8590A2"/>
+  <text x="1113" y="715" text-anchor="middle" class="ui body-strong muted">Отмена</text>
+  <rect x="1171" y="690" width="197" height="40" rx="4" fill="#E30611"/>
+  <text x="1269.5" y="715" text-anchor="middle" class="ui body-strong" fill="#FFFFFF">Запустить AI-ревью</text>
+
+  <!-- Honest footer note -->
+  <rect x="456" y="790" width="936" height="48" rx="4" fill="#FFFFFF" stroke="#DCDFE4"/>
+  <circle cx="480" cy="814" r="9" fill="#F1F2F4" stroke="#8590A2"/>
+  <text x="480" y="818" text-anchor="middle" class="ui tiny" font-weight="700" fill="#44546F">i</text>
+  <text x="498" y="819" class="ui body muted">AI-ревью помогает найти места для уточнения; итоговое решение о готовности документа принимает аналитик.</text>
+
+  <!-- Open context drawer -->
+  <rect x="56" y="56" width="360" height="844" fill="#FFFFFF" filter="url(#drawerShadow)"/>
+  <line x1="415.5" y1="56" x2="415.5" y2="900" stroke="#DCDFE4"/>
+
+  <!-- Drawer header -->
+  <text x="76" y="87" class="ui section">Контекст проверки</text>
+  <text x="76" y="108" class="ui meta subtle">Материалы, доступные агенту</text>
+  <rect x="368" y="70" width="32" height="32" rx="4" fill="#F1F2F4"/>
+  <path d="M378 80l12 12M390 80l-12 12" class="icon"/>
+  <line x1="56" y1="120" x2="416" y2="120" stroke="#DCDFE4"/>
+
+  <!-- Profile selector -->
+  <text x="76" y="148" class="ui label muted">Профиль</text>
+  <rect x="76" y="160" width="320" height="40" rx="4" fill="#FFFFFF" stroke="#8590A2"/>
+  <text x="90" y="185" class="ui body">MTS / NET — потоковые данные</text>
+  <path d="M374 175l5 5 5-5" class="icon"/>
+  <text x="76" y="220" class="ui meta subtle">Черновой профиль · версия 04.09.2026</text>
+  <text x="396" y="220" text-anchor="end" class="ui meta" fill="#B80D18">Открыть</text>
+
+  <!-- Profile materials -->
+  <text x="76" y="256" class="ui body-strong">Материалы профиля</text>
+  <rect x="226" y="240" width="25" height="22" rx="11" fill="#F1F2F4"/>
+  <text x="238.5" y="256" text-anchor="middle" class="ui tiny muted">3</text>
+
+  <rect x="76" y="272" width="320" height="78" rx="4" fill="#FAFBFC" stroke="#DCDFE4"/>
+  <rect x="88" y="291" width="18" height="18" rx="3" fill="#E30611"/>
+  <path d="M92 300l3 3 7-8" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="118" y="296" class="ui body-strong">Основные моменты</text>
+  <text x="118" y="314" class="ui body-strong">документации.pdf</text>
+  <text x="118" y="336" class="ui meta subtle">Правила команды · версия не указана</text>
+  <circle cx="380" cy="311" r="12" fill="#F1F2F4"/>
+  <text x="380" y="314" text-anchor="middle" class="ui body-strong muted">···</text>
+
+  <rect x="76" y="358" width="320" height="70" rx="4" fill="#FAFBFC" stroke="#DCDFE4"/>
+  <rect x="88" y="377" width="18" height="18" rx="3" fill="#E30611"/>
+  <path d="M92 386l3 3 7-8" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="118" y="382" class="ui body-strong">Шаблоны документации.pdf</text>
+  <text x="118" y="404" class="ui meta subtle">Шаблон ТЗ · версия не указана</text>
+  <circle cx="380" cy="393" r="12" fill="#F1F2F4"/>
+  <text x="380" y="396" text-anchor="middle" class="ui body-strong muted">···</text>
+
+  <rect x="76" y="436" width="320" height="70" rx="4" fill="#FAFBFC" stroke="#DCDFE4"/>
+  <rect x="88" y="455" width="18" height="18" rx="3" fill="#E30611"/>
+  <path d="M92 464l3 3 7-8" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="118" y="460" class="ui body-strong">case-brief.txt</text>
+  <text x="118" y="482" class="ui meta subtle">Постановка · исходник 03.09.2026</text>
+  <circle cx="380" cy="471" r="12" fill="#F1F2F4"/>
+  <text x="380" y="474" text-anchor="middle" class="ui body-strong muted">···</text>
+
+  <!-- Run materials -->
+  <text x="76" y="536" class="ui body-strong">Для этого запуска</text>
+  <rect x="207" y="520" width="25" height="22" rx="11" fill="#F1F2F4"/>
+  <text x="219.5" y="536" text-anchor="middle" class="ui tiny muted">1</text>
+
+  <rect x="76" y="550" width="320" height="72" rx="4" fill="#FFF7F7" stroke="#FFBDC2"/>
+  <rect x="88" y="569" width="18" height="18" rx="3" fill="#E30611"/>
+  <path d="M92 578l3 3 7-8" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="118" y="574" class="ui body-strong">test-data.extracted.md</text>
+  <text x="118" y="596" class="ui meta subtle">Извлечённый текст · автоматически</text>
+  <rect x="326" y="565" width="56" height="20" rx="10" fill="#FFE9EB"/>
+  <text x="354" y="579" text-anchor="middle" class="ui tiny" font-weight="700" fill="#B80D18">ВРЕМ.</text>
+
+  <!-- Excluded source -->
+  <rect x="76" y="630" width="320" height="76" rx="4" fill="#FFFFFF" stroke="#DCDFE4"/>
+  <rect x="88" y="650" width="18" height="18" rx="3" fill="#FFFFFF" stroke="#8590A2"/>
+  <text x="118" y="654" class="ui body-strong">document-analysis.md</text>
+  <text x="118" y="676" class="ui meta subtle">Предыдущие наблюдения · отключено</text>
+  <text x="118" y="694" class="ui tiny" fill="#A54800">9 кандидатов не проверены экспертом</text>
+
+  <!-- Warning -->
+  <rect x="76" y="716" width="320" height="58" rx="4" fill="#FFF7D6" stroke="#CF9F02"/>
+  <path d="M92 732l8 14H84z" fill="#CF9F02"/>
+  <text x="92" y="743" text-anchor="middle" class="ui tiny" font-weight="700" fill="#FFFFFF">!</text>
+  <text x="110" y="737" class="ui tiny" fill="#5F4B00">Актуальность шаблона и обязательность</text>
+  <text x="110" y="754" class="ui tiny" fill="#5F4B00">правил ещё не подтверждены MTS.</text>
+
+  <rect x="76" y="786" width="320" height="36" rx="4" fill="#FFFFFF" stroke="#8590A2" stroke-dasharray="4 3"/>
+  <path d="M167 797v14M160 804h14" stroke="#B80D18" stroke-width="1.8" stroke-linecap="round"/>
+  <text x="242" y="809" text-anchor="middle" class="ui body-strong" fill="#B80D18">Добавить артефакт</text>
+
+  <!-- Drawer sticky footer -->
+  <rect x="56" y="838" width="360" height="62" fill="#FFFFFF"/>
+  <line x1="56" y1="838" x2="416" y2="838" stroke="#DCDFE4"/>
+  <text x="76" y="875" class="ui body-strong">Подключено: 4 материала</text>
+  <rect x="314" y="851" width="82" height="36" rx="4" fill="#F1F2F4"/>
+  <text x="355" y="874" text-anchor="middle" class="ui body-strong muted">Закрыть</text>
+</svg>
