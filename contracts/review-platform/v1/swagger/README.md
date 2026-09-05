@@ -13,7 +13,7 @@ python3 -m http.server 8080
 
 <http://localhost:8080/contracts/review-platform/v1/swagger/>
 
-Swagger UI загружается с CDN в зафиксированной версии `5.32.11`; для первого
-открытия нужен доступ к интернету. Внешний Swagger Validator отключён. Кнопка
+Swagger UI поставляется локально в зафиксированной версии `5.32.11` и работает
+без доступа к интернету. Внешний Swagger Validator отключён. Кнопка
 Try it out начнёт выполнять запросы только когда страница и backend доступны
 через один origin с `/api`, как задано в `openapi.yaml`.
