@@ -1117,6 +1117,7 @@ dependencies = [
     { name = "psycopg", extra = ["binary", "pool"] },
     { name = "pydantic" },
     { name = "pydantic-settings" },
+    { name = "pyyaml" },
     { name = "review-core" },
     { name = "sqlalchemy", extra = ["asyncio"] },
 ]
@@ -1131,6 +1132,7 @@ requires-dist = [
     { name = "psycopg", extras = ["binary", "pool"], specifier = "==3.3.5" },
     { name = "pydantic", specifier = "==2.13.5" },
     { name = "pydantic-settings", specifier = "==2.15.0" },
+    { name = "pyyaml", specifier = "==6.0.3" },
     { name = "review-core", editable = "packages/review-core" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = "==2.0.52" },
 ]

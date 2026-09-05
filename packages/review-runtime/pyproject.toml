@@ -15,6 +15,7 @@ dependencies = [
   "psycopg[binary,pool]==3.3.5",
   "pydantic==2.13.5",
   "pydantic-settings==2.15.0",
+  "pyyaml==6.0.3",
   "review-core",
   "sqlalchemy[asyncio]==2.0.52",
 ]

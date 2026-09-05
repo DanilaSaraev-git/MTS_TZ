@@ -30,23 +30,36 @@ async def test_create_run_replay_conflict_and_context_limit(client: AsyncClient)
         "locale": "ru-RU",
     }
     first = await client.post(
-        f"/v1/workspaces/{workspace}/review-runs", json=body, headers={"Idempotency-Key": "same"}
+        f"/v1/workspaces/{workspace}/review-runs", json=body, headers={"Idempotency-Key": "same-key"}
     )
     replay = await client.post(
-        f"/v1/workspaces/{workspace}/review-runs", json=body, headers={"Idempotency-Key": "same"}
+        f"/v1/workspaces/{workspace}/review-runs", json=body, headers={"Idempotency-Key": "same-key"}
     )
     conflict = await client.post(
         f"/v1/workspaces/{workspace}/review-runs",
         json=body | {"locale": "en-US"},
-        headers={"Idempotency-Key": "same"},
+        headers={"Idempotency-Key": "same-key"},
     )
     assert first.status_code == replay.status_code == 202
     assert first.json()["id"] == replay.json()["id"]
+    assert first.headers["location"] == (
+        f"/v1/workspaces/{workspace}/review-runs/{first.json()['id']}"
+    )
+    assert replay.headers["location"] == first.headers["location"]
     assert conflict.status_code == 409
+    short_key = await client.post(
+        f"/v1/workspaces/{workspace}/review-runs",
+        json=body,
+        headers={"Idempotency-Key": "short"},
+    )
+    assert short_key.status_code == 400
+    assert short_key.json()["code"] == "invalid_idempotency_key"
     too_many = body | {"context_document_ids": [document_id] * 51}
     assert (
         await client.post(
-            f"/v1/workspaces/{workspace}/review-runs", json=too_many, headers={"Idempotency-Key": "many"}
+            f"/v1/workspaces/{workspace}/review-runs",
+            json=too_many,
+            headers={"Idempotency-Key": "many-keys"},
         )
     ).status_code == 400
 
@@ -70,7 +83,9 @@ async def test_malformed_run_is_safe_400_and_attempt_outbox_is_exact(client: Asy
         "locale": "en-US",
     }
     await client.post(
-        f"/v1/workspaces/{workspace}/review-runs", json=body, headers={"Idempotency-Key": "outbox"}
+        f"/v1/workspaces/{workspace}/review-runs",
+        json=body,
+        headers={"Idempotency-Key": "outbox-key"},
     )
     assert len(platform.review_executions) == len(platform.outbox) == 1
     execution = next(iter(platform.review_executions.values()))

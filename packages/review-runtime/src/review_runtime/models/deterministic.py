@@ -23,10 +23,14 @@ class DeterministicModelGateway:
         value = json.loads(path.read_text())
         if value.get("schema_version") != "trusted-fixture-manifest.v1":
             raise ValueError("unsupported trusted fixture manifest")
-        selectors = [tuple(binding[key] for key in SELECTOR_KEYS) for binding in value["bindings"]]
+        return cls.from_bindings(value["bindings"])
+
+    @classmethod
+    def from_bindings(cls, bindings: list[dict[str, Any]]) -> DeterministicModelGateway:
+        selectors = [tuple(binding[key] for key in SELECTOR_KEYS) for binding in bindings]
         if len(selectors) != len(set(selectors)):
             raise ValueError("trusted fixture selectors are not unique")
-        return cls(value["bindings"])
+        return cls(bindings)
 
     @staticmethod
     def selector(binding: dict[str, Any]) -> dict[str, str]:

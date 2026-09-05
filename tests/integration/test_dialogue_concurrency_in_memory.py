@@ -25,7 +25,7 @@ def test_one_dialogue_revision_wins() -> None:
             "model_profile": {"id": "deterministic-v1", "version": "1.0.0"},
             "locale": "en-US",
         },
-        "run",
+        "dialogue-run",
     )
     finding_id = next(iter(platform.dialogues))[1]
     body = {"message": "Explain", "expected_revision": 0}
@@ -37,5 +37,5 @@ def test_one_dialogue_revision_wins() -> None:
             return None
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(invoke, ["a", "b"]))
+        results = list(pool.map(invoke, ["turn-key-a", "turn-key-b"]))
     assert sum(value is not None for value in results) == 1

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import os
-from pathlib import Path
+from typing import Any
 
 import psycopg
 from fastapi import APIRouter, Request
@@ -16,7 +15,7 @@ def live() -> dict[str, str]:
 
 
 @router.get("/health/ready")
-def ready(request: Request):  # type: ignore[no-untyped-def]
+def ready(request: Request) -> Any:
     if not hasattr(request.app.state.platform, "database_url"):
         return {"status": "ready", "composition": "fixture"}
     checks: dict[str, bool] = {}
@@ -26,16 +25,17 @@ def ready(request: Request):  # type: ignore[no-untyped-def]
             checks["business_schema"] = connection.execute(
                 "SELECT version_num FROM alembic_version"
             ).fetchone() == ("20260905_0001",)
-            checks["runtime_state"] = connection.execute("SELECT count(*) FROM runtime_state").fetchone() == (
-                1,
-            )
-            checks["queue_schema"] = connection.execute(
-                "SELECT to_regclass('public.procrastinate_jobs') IS NOT NULL"
-            ).fetchone() == (True,)
-        artifact_root = Path(os.environ["REVIEW_ARTIFACT_ROOT"])
-        checks["artifact_store"] = artifact_root.is_dir() and os.access(artifact_root, os.W_OK)
     except Exception:
         checks["database"] = False
+        checks["business_schema"] = False
+    try:
+        checks["exact_seed"] = request.app.state.platform.check_seed()
+    except Exception:
+        checks["exact_seed"] = False
+    try:
+        checks["artifact_store"] = request.app.state.platform.artifacts.probe_writable()
+    except Exception:
+        checks["artifact_store"] = False
     if not all(checks.values()):
         return JSONResponse(status_code=503, content={"status": "not_ready", "checks": checks})
     return {"status": "ready", "composition": "durable", "checks": checks}

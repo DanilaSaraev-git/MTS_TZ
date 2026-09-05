@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Header, Request
+from typing import Any
+
+from fastapi import APIRouter, Header, Request, Response
 from pydantic import ValidationError
 from review_core.domain.errors import InvalidRequest
 
@@ -15,20 +17,25 @@ def get_dialogue(request: Request, workspace_id: str, run_id: str, finding_id: s
 @router.post("/dialogue/turns", status_code=202)
 async def create_turn(
     request: Request,
+    response: Response,
     workspace_id: str,
     run_id: str,
     finding_id: str,
     idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
-):  # type: ignore[no-untyped-def]
+) -> Any:
     if idempotency_key is None:
         raise InvalidRequest("missing_idempotency_key", "Idempotency-Key is required.")
     try:
         body = CreateDialogueTurnDTO.model_validate(await request.json()).model_dump(mode="json")
     except (ValidationError, ValueError) as error:
         raise InvalidRequest("invalid_dialogue_turn", "Dialogue turn body is invalid.") from error
-    return request.app.state.platform.create_dialogue_turn(
+    value = request.app.state.platform.create_dialogue_turn(
         workspace_id, run_id, finding_id, body, idempotency_key
     )
+    response.headers["Location"] = (
+        f"/v1/workspaces/{workspace_id}/review-runs/{run_id}/findings/{finding_id}/dialogue"
+    )
+    return value
 
 
 @router.post("/dialogue/turns/{turn_id}/retry", status_code=202)
@@ -39,7 +46,7 @@ async def retry_turn(
     finding_id: str,
     turn_id: str,
     idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
-):  # type: ignore[no-untyped-def]
+) -> Any:
     if idempotency_key is None:
         raise InvalidRequest("missing_idempotency_key", "Idempotency-Key is required.")
     try:

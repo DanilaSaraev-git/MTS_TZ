@@ -5,9 +5,11 @@ import hashlib
 import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from threading import Lock
 from typing import Any, Protocol
 
 from review_core.application.findings import next_decision
+from review_core.application.idempotency import require_idempotency_key
 from review_core.application.profiles import (
     ProfileConflict,
     ProfileStore,
@@ -94,6 +96,7 @@ class ReviewPlatform:
         self.dialogue_idempotency: dict[tuple[str, str], tuple[str, str]] = {}
         self.review_executions: dict[str, dict[str, Any]] = {}
         self.outbox: dict[str, dict[str, Any]] = {}
+        self._dialogue_lock = Lock()
 
     def _workspace(self, workspace_id: str) -> None:
         if workspace_id != self.workspace_id:
@@ -247,8 +250,7 @@ class ReviewPlatform:
 
     def create_run(self, workspace_id: str, body: dict[str, Any], key: str) -> dict[str, Any]:
         self._workspace(workspace_id)
-        if not key or len(key) > 255:
-            raise InvalidRequest("invalid_idempotency_key", "Idempotency-Key is required.")
+        require_idempotency_key(key)
         if len(body.get("context_document_ids", [])) > 50:
             raise InvalidRequest("context_limit", "At most 50 context documents are accepted.")
         digest = digest_value(body)
@@ -463,6 +465,13 @@ class ReviewPlatform:
     def create_dialogue_turn(
         self, workspace_id: str, run_id: str, finding_id: str, body: dict[str, Any], key: str
     ) -> dict[str, Any]:
+        require_idempotency_key(key)
+        with self._dialogue_lock:
+            return self._create_dialogue_turn(workspace_id, run_id, finding_id, body, key)
+
+    def _create_dialogue_turn(
+        self, workspace_id: str, run_id: str, finding_id: str, body: dict[str, Any], key: str
+    ) -> dict[str, Any]:
         dialogue = self._get_finding_dialogue(workspace_id, run_id, finding_id)
         digest = digest_value(body)
         idempotency_key = (dialogue["id"], key)
@@ -512,6 +521,7 @@ class ReviewPlatform:
     def retry_dialogue_turn(
         self, workspace_id: str, run_id: str, finding_id: str, turn_id: str, body: dict[str, Any], key: str
     ) -> dict[str, Any]:
+        require_idempotency_key(key)
         dialogue = self._get_finding_dialogue(workspace_id, run_id, finding_id)
         digest = digest_value(body)
         idempotency_key = (f"retry:{turn_id}", key)

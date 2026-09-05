@@ -1,4 +1,4 @@
-"""Review Platform durable worker composition root."""
+"""Deferred queue prototype; excluded from the default local MVP runtime."""
 
 from __future__ import annotations
 

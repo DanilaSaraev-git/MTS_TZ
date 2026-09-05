@@ -4,13 +4,14 @@ import base64
 import hashlib
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 from review_core.application.findings import next_decision
+from review_core.application.idempotency import require_idempotency_key
 from review_core.application.platform import DocumentRecord, ReviewExecutor, RunRecord
 from review_core.application.profiles import ProfileVersion
 from review_core.canonical import canonical_bytes, digest_value, strong_etag
@@ -22,8 +23,15 @@ from review_runtime.config.settings import OperatorSettings
 from review_runtime.documents.pdf import PdfDocumentParser
 from review_runtime.documents.text import TextDocumentParser
 from review_runtime.postgres.artifact_fence import advisory_fence_key
+from review_runtime.reports import CanonicalReportValidator
 
 CODEC = "jcs-rfc8785-0.1.4"
+RELEASE_PROFILE_SEMANTIC = {
+    "name": "Base data specification review",
+    "role": "Analyst with developer and tester viewpoints",
+    "goal": "Find ambiguity before implementation",
+    "checks": ["Sources and fields", "Transformations and schedules"],
+}
 
 
 def utc_now() -> datetime:
@@ -42,6 +50,7 @@ class PostgresReviewPlatform:
         self.settings = settings
         self.database_url = settings.database_url.replace("postgresql+psycopg://", "postgresql://", 1)
         self.artifacts = PosixArtifactStore(settings.artifact_root)
+        self.report_validator = CanonicalReportValidator(settings.report_contract_path)
         self.organization_id = str(settings.organization_id)
         self.workspace_id = str(settings.workspace_id)
         self.actor = {"id": str(settings.actor_id), "display_name": settings.actor_display_name}
@@ -71,12 +80,7 @@ class PostgresReviewPlatform:
 
     def _seed_exact(self) -> None:
         now = utc_now()
-        semantic = {
-            "name": "Base data specification review",
-            "role": "Analyst with developer and tester viewpoints",
-            "goal": "Find ambiguity before implementation",
-            "checks": ["Sources and fields", "Transformations and schedules"],
-        }
+        semantic = RELEASE_PROFILE_SEMANTIC
         model_payload = {"adapter_kind": "deterministic", "capabilities": ["text_generation"]}
         skill_payload = {"package_sha256": self.settings.skill_package_sha256}
         policy_payload = {"max_member_turns": None}
@@ -200,6 +204,17 @@ class PostgresReviewPlatform:
             },
             "limits": {"document_upload_max_bytes": self.max_upload_bytes, "max_context_documents": 50},
         }
+
+    def check_seed(self) -> bool:
+        self._seed_exact()
+        check_configuration = getattr(self.executor, "check_release_configuration", None)
+        if callable(check_configuration):
+            check_configuration(
+                review_profile_semantic_digest=digest_value(RELEASE_PROFILE_SEMANTIC),
+                skill_package_sha256=self.settings.skill_package_sha256,
+                engine_version="1.0.0",
+            )
+        return True
 
     @staticmethod
     def _validate_upload(filename: str, media_type: str, content: bytes, limit: int) -> None:
@@ -545,15 +560,14 @@ class PostgresReviewPlatform:
 
     def create_run(self, workspace_id: str, body: dict[str, Any], key: str) -> dict[str, Any]:
         self._workspace(workspace_id)
-        if not key or len(key) > 255:
-            raise InvalidRequest("invalid_idempotency_key", "Idempotency-Key is required.")
+        require_idempotency_key(key)
         context_ids = body.get("context_document_ids", [])
         if len(context_ids) > 50:
             raise InvalidRequest("context_limit", "At most 50 context documents are accepted.")
         if len(context_ids) != len(set(context_ids)):
             raise InvalidRequest("duplicate_context", "Context document IDs must be unique.")
         request_digest = digest_value(body)
-        run_id, execution_id, outbox_id, snapshot_id = (str(uuid4()) for _ in range(4))
+        run_id, snapshot_id = (str(uuid4()) for _ in range(2))
         with self._connect() as connection:
             existing = connection.execute(
                 "SELECT request_digest,resource_id FROM idempotency_records WHERE organization_id=%s AND workspace_id=%s AND operation='create_run' AND key=%s FOR UPDATE",
@@ -589,7 +603,7 @@ class PostgresReviewPlatform:
                 "error": None,
             }
             connection.execute(
-                "INSERT INTO execution_snapshots(organization_id,workspace_id,id,digest,codec_id,value,created_at) VALUES(%s,%s,%s,%s,%s,%s,%s)",
+                "INSERT INTO execution_snapshots(organization_id,workspace_id,id,digest,codec_id,value,created_at) VALUES(%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (organization_id,workspace_id,digest) DO NOTHING",
                 (
                     self.organization_id,
                     workspace_id,
@@ -618,50 +632,18 @@ class PostgresReviewPlatform:
                     ),
                 )
             connection.execute(
-                "INSERT INTO review_run_executions(organization_id,workspace_id,id,state,checkpoint,attempt_count,lease_token,lease_owner,lease_expires_at,heartbeat_at,revision,run_id) VALUES(%s,%s,%s,'ready','queued',0,NULL,NULL,NULL,NULL,0,%s)",
-                (self.organization_id, workspace_id, execution_id, run_id),
-            )
-            payload = {
-                "organization_id": self.organization_id,
-                "workspace_id": workspace_id,
-                "review_run_id": run_id,
-                "review_execution_id": execution_id,
-            }
-            connection.execute(
-                "INSERT INTO job_outbox(organization_id,workspace_id,id,kind,business_key,payload,state,attempts,max_attempts,claim_token,claimed_by,lease_expires_at,next_attempt_at) VALUES(%s,%s,%s,'execute_review',%s,%s,'pending',0,12,NULL,NULL,NULL,%s)",
-                (self.organization_id, workspace_id, outbox_id, execution_id, Jsonb(payload), created),
-            )
-            connection.execute(
                 "INSERT INTO idempotency_records(organization_id,workspace_id,operation,key,request_digest,codec_id,resource_kind,resource_id) VALUES(%s,%s,'create_run',%s,%s,%s,'review_run',%s)",
                 (self.organization_id, workspace_id, key, request_digest, CODEC, run_id),
             )
-        self.execute_review(execution_id)
+        self.execute_review(run_id)
         return self.get_run(workspace_id, run_id).value
 
-    def execute_review(self, execution_id: str) -> None:
-        lease = str(uuid4())
+    def execute_review(self, run_id: str) -> None:
         now = utc_now()
         with self._connect() as connection:
-            row = connection.execute(
-                """UPDATE review_run_executions SET state='running',attempt_count=attempt_count+1,
-            lease_token=%s,lease_owner='inline-dispatch',lease_expires_at=%s,heartbeat_at=%s,revision=revision+1
-            WHERE organization_id=%s AND workspace_id=%s AND id=%s AND state IN ('ready','running')
-            AND (lease_expires_at IS NULL OR lease_expires_at<%s) RETURNING run_id""",
-                (
-                    lease,
-                    now + timedelta(minutes=3),
-                    now,
-                    self.organization_id,
-                    self.workspace_id,
-                    execution_id,
-                    now,
-                ),
-            ).fetchone()
-            if row is None:
-                return
             run_row = connection.execute(
                 "SELECT * FROM review_runs WHERE organization_id=%s AND workspace_id=%s AND id=%s FOR UPDATE",
-                (self.organization_id, self.workspace_id, row["run_id"]),
+                (self.organization_id, self.workspace_id, run_id),
             ).fetchone()
             if run_row is None or run_row["state"] in {"completed", "failed", "cancelled"}:
                 return
@@ -673,23 +655,24 @@ class PostgresReviewPlatform:
             )
             connection.execute(
                 "UPDATE review_runs SET state='preparing',revision=revision+1,value=%s WHERE organization_id=%s AND workspace_id=%s AND id=%s",
-                (Jsonb(run), self.organization_id, self.workspace_id, row["run_id"]),
+                (Jsonb(run), self.organization_id, self.workspace_id, run_id),
             )
         with self._connect() as connection:
             source_rows = connection.execute(
                 "SELECT document_id,role,ordinal FROM review_run_sources WHERE organization_id=%s AND workspace_id=%s AND run_id=%s ORDER BY ordinal",
-                (self.organization_id, self.workspace_id, row["run_id"]),
+                (self.organization_id, self.workspace_id, run_id),
             ).fetchall()
             run_row = connection.execute(
                 "SELECT * FROM review_runs WHERE organization_id=%s AND workspace_id=%s AND id=%s",
-                (self.organization_id, self.workspace_id, row["run_id"]),
+                (self.organization_id, self.workspace_id, run_id),
             ).fetchone()
+        assert run_row is not None
         documents = [self.get_document(self.workspace_id, item["document_id"]) for item in source_rows]
         report_id = str(uuid4())
         created = utc_now()
         try:
             report = self.executor.execute(
-                run_id=row["run_id"],
+                run_id=run_id,
                 report_id=report_id,
                 document=documents[0],
                 context=documents[1:],
@@ -706,11 +689,26 @@ class PostgresReviewPlatform:
                 }
                 connection.execute(
                     "UPDATE review_runs SET state='failed',value=%s,revision=revision+1 WHERE organization_id=%s AND workspace_id=%s AND id=%s",
-                    (Jsonb(run), self.organization_id, self.workspace_id, row["run_id"]),
+                    (Jsonb(run), self.organization_id, self.workspace_id, run_id),
                 )
+            return
+        try:
+            self.report_validator.validate(report)
+        except ValueError:
+            with self._connect() as connection:
+                run = run_row["value"] | {
+                    "state": "failed",
+                    "finished_at": wire_time(utc_now()),
+                    "error": {
+                        "code": "validation_failed",
+                        "message": "Generated review report did not satisfy the canonical schema.",
+                        "retryable": False,
+                    },
+                    "progress": {"percent": 95, "message": "Report validation failed"},
+                }
                 connection.execute(
-                    "UPDATE review_run_executions SET state='failed',lease_token=NULL,lease_owner=NULL,lease_expires_at=NULL WHERE organization_id=%s AND workspace_id=%s AND id=%s AND lease_token=%s",
-                    (self.organization_id, self.workspace_id, execution_id, lease),
+                    "UPDATE review_runs SET state='failed',value=%s,revision=revision+1 WHERE organization_id=%s AND workspace_id=%s AND id=%s",
+                    (Jsonb(run), self.organization_id, self.workspace_id, run_id),
                 )
             return
         report_bytes = canonical_bytes(report)
@@ -723,7 +721,7 @@ class PostgresReviewPlatform:
         with self._connect() as connection:
             current = connection.execute(
                 "SELECT state,cancel_requested_at,value,revision FROM review_runs WHERE organization_id=%s AND workspace_id=%s AND id=%s FOR UPDATE",
-                (self.organization_id, self.workspace_id, row["run_id"]),
+                (self.organization_id, self.workspace_id, run_id),
             ).fetchone()
             if (
                 current is None
@@ -752,7 +750,7 @@ class PostgresReviewPlatform:
                     self.organization_id,
                     self.workspace_id,
                     report_id,
-                    row["run_id"],
+                    run_id,
                     artifact_id,
                     digest,
                     etag,
@@ -797,7 +795,7 @@ class PostgresReviewPlatform:
                 dialogue_id = str(uuid4())
                 dialogue = {
                     "id": dialogue_id,
-                    "run_id": row["run_id"],
+                    "run_id": run_id,
                     "finding_id": finding["id"],
                     "revision": 0,
                     "state": "open",
@@ -827,17 +825,9 @@ class PostgresReviewPlatform:
                     Jsonb(completed),
                     self.organization_id,
                     self.workspace_id,
-                    row["run_id"],
+                    run_id,
                     current["revision"],
                 ),
-            )
-            connection.execute(
-                "UPDATE review_run_executions SET state='completed',checkpoint='published',lease_token=NULL,lease_owner=NULL,lease_expires_at=NULL,revision=revision+1 WHERE organization_id=%s AND workspace_id=%s AND id=%s AND lease_token=%s",
-                (self.organization_id, self.workspace_id, execution_id, lease),
-            )
-            connection.execute(
-                "UPDATE job_outbox SET state='published' WHERE organization_id=%s AND workspace_id=%s AND business_key=%s",
-                (self.organization_id, self.workspace_id, execution_id),
             )
 
     def get_run(self, workspace_id: str, run_id: str) -> RunRecord:
@@ -898,7 +888,7 @@ class PostgresReviewPlatform:
             ).fetchone()
         if row is None:
             raise NotFound()
-        return row["value"]
+        return cast(dict[str, Any], row["value"])
 
     def states(self, workspace_id: str, run_id: str) -> dict[str, Any]:
         self.get_run(workspace_id, run_id)
@@ -936,9 +926,10 @@ class PostgresReviewPlatform:
     def create_dialogue_turn(
         self, workspace_id: str, run_id: str, finding_id: str, body: dict[str, Any], key: str
     ) -> dict[str, Any]:
+        require_idempotency_key(key)
         dialogue = self._dialogue(workspace_id, run_id, finding_id)
         digest = digest_value(body)
-        turn_id, attempt_id, outbox_id = str(uuid4()), str(uuid4()), str(uuid4())
+        turn_id = str(uuid4())
         now = utc_now()
         with self._connect() as connection:
             existing = connection.execute(
@@ -955,6 +946,7 @@ class PostgresReviewPlatform:
                 "SELECT revision,value FROM finding_dialogues WHERE organization_id=%s AND workspace_id=%s AND id=%s FOR UPDATE",
                 (self.organization_id, workspace_id, dialogue["id"]),
             ).fetchone()
+            assert row is not None
             if row["revision"] != body["expected_revision"]:
                 raise Conflict("revision_conflict", "Dialogue revision changed.")
             if not row["value"]["can_send_message"]:
@@ -993,20 +985,6 @@ class PostgresReviewPlatform:
                 (self.organization_id, workspace_id, turn_id, dialogue["id"], turn["ordinal"], Jsonb(turn)),
             )
             connection.execute(
-                "INSERT INTO generation_attempts(organization_id,workspace_id,id,state,checkpoint,attempt_count,lease_token,lease_owner,lease_expires_at,heartbeat_at,revision,dialogue_turn_id,ordinal,value) VALUES(%s,%s,%s,'ready','queued',0,NULL,NULL,NULL,NULL,0,%s,1,%s)",
-                (self.organization_id, workspace_id, attempt_id, turn_id, Jsonb({})),
-            )
-            payload = {
-                "organization_id": self.organization_id,
-                "workspace_id": workspace_id,
-                "dialogue_turn_id": turn_id,
-                "generation_attempt_id": attempt_id,
-            }
-            connection.execute(
-                "INSERT INTO job_outbox(organization_id,workspace_id,id,kind,business_key,payload,state,attempts,max_attempts,claim_token,claimed_by,lease_expires_at,next_attempt_at) VALUES(%s,%s,%s,'generate_dialogue',%s,%s,'pending',0,12,NULL,NULL,NULL,%s)",
-                (self.organization_id, workspace_id, outbox_id, attempt_id, Jsonb(payload), now),
-            )
-            connection.execute(
                 "INSERT INTO idempotency_records(organization_id,workspace_id,operation,key,request_digest,codec_id,resource_kind,resource_id) VALUES(%s,%s,%s,%s,%s,%s,'dialogue_turn',%s)",
                 (
                     self.organization_id,
@@ -1018,25 +996,21 @@ class PostgresReviewPlatform:
                     turn_id,
                 ),
             )
-        self.execute_dialogue(attempt_id, run_id, finding_id)
+        self.execute_dialogue(turn_id, run_id, finding_id)
         return self._dialogue(workspace_id, run_id, finding_id)
 
-    def execute_dialogue(self, attempt_id: str, run_id: str, finding_id: str) -> None:
+    def execute_dialogue(self, turn_id: str, run_id: str, finding_id: str) -> None:
         with self._connect() as connection:
-            attempt = connection.execute(
-                "SELECT * FROM generation_attempts WHERE organization_id=%s AND workspace_id=%s AND id=%s FOR UPDATE",
-                (self.organization_id, self.workspace_id, attempt_id),
-            ).fetchone()
-            if attempt is None or attempt["state"] == "completed":
-                return
             turn = connection.execute(
                 "SELECT * FROM dialogue_turns WHERE organization_id=%s AND workspace_id=%s AND id=%s FOR UPDATE",
-                (self.organization_id, self.workspace_id, attempt["dialogue_turn_id"]),
+                (self.organization_id, self.workspace_id, turn_id),
             ).fetchone()
             finding = connection.execute(
                 "SELECT f.value,r.graph->'provenance'->'execution_snapshot' AS snapshot FROM findings f JOIN review_reports r ON r.organization_id=f.organization_id AND r.workspace_id=f.workspace_id AND r.id=f.report_id WHERE f.organization_id=%s AND f.workspace_id=%s AND f.id=%s AND r.run_id=%s",
                 (self.organization_id, self.workspace_id, finding_id, run_id),
             ).fetchone()
+            assert turn is not None
+            assert finding is not None
             response = deterministic_dialogue_response(finding["snapshot"], finding["value"]["anchors"])
             turn_value = turn["value"] | {
                 "state": "completed",
@@ -1051,6 +1025,7 @@ class PostgresReviewPlatform:
                 "SELECT revision,value FROM finding_dialogues WHERE organization_id=%s AND workspace_id=%s AND id=%s FOR UPDATE",
                 (self.organization_id, self.workspace_id, turn["dialogue_id"]),
             ).fetchone()
+            assert dialogue is not None
             value = dialogue["value"]
             value["turns"][-1] = turn_value
             value.update(
@@ -1060,18 +1035,11 @@ class PostgresReviewPlatform:
                 "UPDATE finding_dialogues SET revision=revision+1,value=%s WHERE organization_id=%s AND workspace_id=%s AND id=%s",
                 (Jsonb(value), self.organization_id, self.workspace_id, turn["dialogue_id"]),
             )
-            connection.execute(
-                "UPDATE generation_attempts SET state='completed',checkpoint='published',attempt_count=attempt_count+1 WHERE organization_id=%s AND workspace_id=%s AND id=%s",
-                (self.organization_id, self.workspace_id, attempt_id),
-            )
-            connection.execute(
-                "UPDATE job_outbox SET state='published' WHERE organization_id=%s AND workspace_id=%s AND business_key=%s",
-                (self.organization_id, self.workspace_id, attempt_id),
-            )
 
     def retry_dialogue_turn(
         self, workspace_id: str, run_id: str, finding_id: str, turn_id: str, body: dict[str, Any], key: str
     ) -> dict[str, Any]:
+        require_idempotency_key(key)
         dialogue = self._dialogue(workspace_id, run_id, finding_id)
         turn = next((item for item in dialogue["turns"] if item["id"] == turn_id), None)
         if turn is None:
@@ -1095,6 +1063,7 @@ class PostgresReviewPlatform:
                 "SELECT decision_revision,value FROM finding_states WHERE organization_id=%s AND workspace_id=%s AND finding_id=%s FOR UPDATE",
                 (self.organization_id, workspace_id, finding_id),
             ).fetchone()
+            assert state is not None
             try:
                 decision = next_decision(
                     state["value"], body, actor=self.actor, decided_at=wire_time(utc_now())
