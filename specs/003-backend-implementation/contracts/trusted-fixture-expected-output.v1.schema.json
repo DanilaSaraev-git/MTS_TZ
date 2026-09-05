@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://review-platform.local/schemas/trusted-fixture-expected-output.v1.schema.json",
+  "title": "Trusted deterministic fixture expected output v1",
+  "description": "Closed operator-controlled template used only after an exact runtime-config digest binding matches. It is not a public or model DTO. Runtime/source/fragment IDs and quote offsets are resolved from verified prepared input; no free-form placeholder substitution is allowed.",
+  "$comment": "Semantic validation MUST require unique finding local_id values; unique primary ordinals across reviewed/unreviewed sets; an exact partition of the prepared primary fragments; every referenced ordinal to exist; and each anchor quote+occurrence to resolve exactly in that fragment. Placeholder-like strings are literal text. After resolving current IDs and offsets, the complete value MUST validate as review-output.v1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "resource_id",
+    "summary",
+    "reviewed_primary_fragment_ordinals",
+    "unreviewed_primary_fragments",
+    "findings",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {"const": "trusted-fixture-expected-output.v1"},
+    "resource_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "summary": {"type": "string", "minLength": 1, "maxLength": 5000},
+    "reviewed_primary_fragment_ordinals": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "integer", "minimum": 1}
+    },
+    "unreviewed_primary_fragments": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/unreviewed_fragment_template"}
+    },
+    "findings": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {"$ref": "#/$defs/finding_template"}
+    },
+    "limitations": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 2000}
+    }
+  },
+  "$defs": {
+    "unreviewed_fragment_template": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary_fragment_ordinal", "code", "reason"],
+      "properties": {
+        "primary_fragment_ordinal": {"type": "integer", "minimum": 1},
+        "code": {"enum": ["processing_failed", "unsupported_content", "other"]},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 2000}
+      }
+    },
+    "priority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level", "rationale"],
+      "properties": {
+        "level": {"enum": ["high", "medium", "low"]},
+        "rationale": {"type": "string", "minLength": 1, "maxLength": 2000}
+      }
+    },
+    "anchor_template": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary_fragment_ordinal", "quote", "occurrence"],
+      "properties": {
+        "primary_fragment_ordinal": {"type": "integer", "minimum": 1},
+        "quote": {"type": "string", "minLength": 1, "maxLength": 4000},
+        "occurrence": {"type": "integer", "minimum": 1}
+      }
+    },
+    "finding_template": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "local_id",
+        "kind",
+        "title",
+        "problem",
+        "reason",
+        "question",
+        "priority",
+        "anchors",
+        "scope_primary_fragment_ordinals"
+      ],
+      "properties": {
+        "local_id": {"type": "string", "pattern": "^F-[0-9]{3,}$"},
+        "kind": {"enum": ["ambiguity", "contradiction", "missing", "inconsistency", "other"]},
+        "title": {"type": "string", "minLength": 1, "maxLength": 500},
+        "problem": {"type": "string", "minLength": 1, "maxLength": 4000},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 4000},
+        "question": {"type": "string", "minLength": 1, "maxLength": 4000},
+        "priority": {"$ref": "#/$defs/priority"},
+        "anchors": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/anchor_template"}
+        },
+        "scope_primary_fragment_ordinals": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "integer", "minimum": 1}
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"kind": {"const": "missing"}},
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "anchors": {"maxItems": 0},
+              "scope_primary_fragment_ordinals": {"minItems": 1}
+            }
+          },
+          "else": {
+            "properties": {
+              "anchors": {"minItems": 1}
+            }
+          }
+        }
+      ]
+    }
+  }
+}

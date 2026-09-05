@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-05 — v1.0.2 additive backend preflight
+
+- Добавлены документированные `400` для invalid cursors, `404` для namespace mismatch upload и `409` для profile head/content conflicts.
+- Уточнены immutable profile family/version, asynchronous extraction projection и quoted strong SHA-256 ETag exact bytes.
+- Зафиксирована семантика partial primary через существующий `source_partial` и `reason=primary_source_partial` без расширения enum.
+- Swagger UI переведён на локальные version-pinned assets, чтобы документация работала offline.
+- Обязательные поля, URL и существующие enum не менялись.
+
 ## 2026-09-04 — v1.0.1 handoff baseline
 
 - Согласованы Spec Kit-артефакты, архитектура и задачи с no-auth deployment boundary.
