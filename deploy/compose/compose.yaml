@@ -1,0 +1,60 @@
+name: review-platform
+services:
+  postgres:
+    image: postgres:18.6
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes: ["postgres-data:/var/lib/postgresql"]
+    networks: ["internal"]
+  api:
+    build:
+      context: ../..
+      dockerfile: deploy/compose/Dockerfile
+    command: ["uvicorn", "review_api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    env_file: .env
+    environment:
+      REVIEW_COMPOSITION: durable
+      REVIEW_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
+      REVIEW_QUEUE_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
+      REVIEW_ARTIFACT_ROOT: /var/lib/review/artifacts
+    volumes:
+      - artifacts:/var/lib/review/artifacts
+      - ./config:/app/config:ro
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: ["internal"]
+  worker:
+    build:
+      context: ../..
+      dockerfile: deploy/compose/Dockerfile
+    command: ["procrastinate", "--app=review_worker.procrastinate_app", "worker"]
+    env_file: .env
+    environment:
+      REVIEW_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
+      REVIEW_QUEUE_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
+      REVIEW_ARTIFACT_ROOT: /var/lib/review/artifacts
+    volumes:
+      - artifacts:/var/lib/review/artifacts
+      - ./config:/app/config:ro
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: ["internal"]
+  proxy:
+    image: nginx:1.29.4-alpine
+    volumes: ["./nginx.conf:/etc/nginx/nginx.conf:ro"]
+    ports: ["127.0.0.1:${REVIEW_PROXY_PORT:-8080}:8080"]
+    depends_on: ["api"]
+    networks: ["internal", "edge"]
+networks:
+  internal: {internal: true}
+  edge: {}
+volumes:
+  postgres-data: {}
+  artifacts: {}
