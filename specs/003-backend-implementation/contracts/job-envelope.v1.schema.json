@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://review-platform.local/schemas/job-envelope.v1.schema.json",
+  "title": "Review Platform attempt-specific job envelope v1",
+  "$comment": "Runtime validation MUST assert UUID formats and verify all parent/namespace relationships before claiming the named business execution or generation attempt.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "job_id",
+    "organization_id",
+    "workspace_id",
+    "kind",
+    "payload",
+    "requested_by",
+    "trace_id"
+  ],
+  "properties": {
+    "schema_version": {"const": "job-envelope.v1"},
+    "job_id": {"type": "string", "format": "uuid"},
+    "organization_id": {"type": "string", "format": "uuid"},
+    "workspace_id": {"type": "string", "format": "uuid"},
+    "kind": {"enum": ["execute_review", "generate_dialogue_turn"]},
+    "payload": {"type": "object"},
+    "requested_by": {"type": "string", "format": "uuid"},
+    "trace_id": {"type": "string", "minLength": 1, "maxLength": 128}
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "kind": {"const": "execute_review"},
+        "payload": {"$ref": "#/$defs/execute_review_payload"}
+      }
+    },
+    {
+      "properties": {
+        "kind": {"const": "generate_dialogue_turn"},
+        "payload": {"$ref": "#/$defs/generate_dialogue_turn_payload"}
+      }
+    }
+  ],
+  "$defs": {
+    "execute_review_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review_run_id", "review_execution_id"],
+      "properties": {
+        "review_run_id": {"type": "string", "format": "uuid"},
+        "review_execution_id": {"type": "string", "format": "uuid"}
+      }
+    },
+    "generate_dialogue_turn_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dialogue_id", "dialogue_turn_id", "generation_attempt_id"],
+      "properties": {
+        "dialogue_id": {"type": "string", "format": "uuid"},
+        "dialogue_turn_id": {"type": "string", "format": "uuid"},
+        "generation_attempt_id": {"type": "string", "format": "uuid"}
+      }
+    }
+  }
+}

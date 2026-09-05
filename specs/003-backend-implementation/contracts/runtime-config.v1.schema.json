@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://review-platform.local/schemas/runtime-config.v1.schema.json",
+  "title": "Review Platform runtime configuration v1",
+  "description": "Complete, secret-free runtime policy. Default annotations are the feature-003 release defaults and MUST be materialized before canonical digesting.",
+  "$comment": "After JSON Schema validation, semantic validation MUST enforce: heartbeat_seconds * 3 <= lease_seconds for each lease; recovery.scan_interval_seconds <= the shortest lease; retry initial_backoff_seconds <= max_backoff_seconds; all configured operation timeouts are covered by an actively renewed owning lease; trusted fixture binding_id and selector tuples are unique; every bound expected_output_resource_id resolves only through the operator registry and its exact bytes match expected_output_sha256 plus trusted-fixture-expected-output.v1. URI formats MUST be asserted by the validator. An enabled model endpoint MUST be absolute HTTP(S), contain no userinfo/query/fragment, and be the sole network-policy egress destination. These invariants require negative contract tests.",
+  "type": "object",
+  "additionalProperties": false,
+  "default": {
+    "schema_version": "runtime-config.v1",
+    "canonical_codec_id": "jcs-rfc8785-0.1.4",
+    "retries": {
+      "extraction_max_attempts": 3,
+      "review_execution_max_attempts": 3,
+      "dialogue_execution_max_attempts": 3,
+      "model_call_max_attempts_per_work_item": 3,
+      "outbox_publish_max_attempts": 12,
+      "initial_backoff_seconds": 1,
+      "max_backoff_seconds": 60,
+      "backoff_multiplier": 2,
+      "jitter_ratio": 0.2
+    },
+    "timeouts_seconds": {
+      "parser": 120,
+      "model_call": 90,
+      "outbox_publish": 15,
+      "database_statement": 30,
+      "artifact_io": 120,
+      "graceful_shutdown": 30
+    },
+    "leases": {
+      "extraction": {"lease_seconds": 180, "heartbeat_seconds": 30},
+      "review_execution": {"lease_seconds": 180, "heartbeat_seconds": 30},
+      "dialogue_execution": {"lease_seconds": 180, "heartbeat_seconds": 30},
+      "outbox_claim": {"lease_seconds": 60, "heartbeat_seconds": 10}
+    },
+    "recovery": {
+      "scan_interval_seconds": 30,
+      "staging_orphan_grace_seconds": 3600,
+      "promoted_orphan_grace_seconds": 86400,
+      "collector_batch_size": 100
+    },
+    "budgets": {
+      "max_upload_bytes": 52428800,
+      "max_context_documents": 50,
+      "max_pages_per_document": 1000,
+      "max_fragments_per_document": 20000,
+      "max_fragment_codepoints": 20000,
+      "max_review_input_codepoints": 500000,
+      "max_model_output_bytes": 1048576,
+      "max_dialogue_message_codepoints": 20000,
+      "max_dialogue_turns": 100,
+      "max_parallel_work_items_per_run": 4,
+      "max_parallel_model_calls": 2
+    },
+    "model_gateway": {
+      "release_default": "deterministic",
+      "optional_openai_compatible": {
+        "enabled": false,
+        "endpoint": null,
+        "model": null,
+        "secret_ref": null,
+        "auto_download": false
+      }
+    },
+    "deterministic_gateway": {
+      "default_behavior": "no_semantic_analysis",
+      "trusted_fixture_bindings": []
+    }
+  },
+  "required": [
+    "schema_version",
+    "canonical_codec_id",
+    "retries",
+    "timeouts_seconds",
+    "leases",
+    "recovery",
+    "budgets",
+    "model_gateway",
+    "deterministic_gateway"
+  ],
+  "properties": {
+    "schema_version": {"const": "runtime-config.v1"},
+    "canonical_codec_id": {"const": "jcs-rfc8785-0.1.4"},
+    "retries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "extraction_max_attempts",
+        "review_execution_max_attempts",
+        "dialogue_execution_max_attempts",
+        "model_call_max_attempts_per_work_item",
+        "outbox_publish_max_attempts",
+        "initial_backoff_seconds",
+        "max_backoff_seconds",
+        "backoff_multiplier",
+        "jitter_ratio"
+      ],
+      "properties": {
+        "extraction_max_attempts": {"type": "integer", "minimum": 1, "maximum": 10, "default": 3},
+        "review_execution_max_attempts": {"type": "integer", "minimum": 1, "maximum": 10, "default": 3},
+        "dialogue_execution_max_attempts": {"type": "integer", "minimum": 1, "maximum": 10, "default": 3},
+        "model_call_max_attempts_per_work_item": {"type": "integer", "minimum": 1, "maximum": 10, "default": 3},
+        "outbox_publish_max_attempts": {"type": "integer", "minimum": 1, "maximum": 100, "default": 12},
+        "initial_backoff_seconds": {"type": "number", "minimum": 0.1, "maximum": 60, "default": 1},
+        "max_backoff_seconds": {"type": "number", "minimum": 1, "maximum": 3600, "default": 60},
+        "backoff_multiplier": {"type": "number", "minimum": 1, "maximum": 4, "default": 2},
+        "jitter_ratio": {"type": "number", "minimum": 0, "maximum": 0.5, "default": 0.2}
+      }
+    },
+    "timeouts_seconds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parser", "model_call", "outbox_publish", "database_statement", "artifact_io", "graceful_shutdown"],
+      "properties": {
+        "parser": {"type": "integer", "minimum": 1, "maximum": 1800, "default": 120},
+        "model_call": {"type": "integer", "minimum": 1, "maximum": 1800, "default": 90},
+        "outbox_publish": {"type": "integer", "minimum": 1, "maximum": 300, "default": 15},
+        "database_statement": {"type": "integer", "minimum": 1, "maximum": 300, "default": 30},
+        "artifact_io": {"type": "integer", "minimum": 1, "maximum": 1800, "default": 120},
+        "graceful_shutdown": {"type": "integer", "minimum": 1, "maximum": 300, "default": 30}
+      }
+    },
+    "leases": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["extraction", "review_execution", "dialogue_execution", "outbox_claim"],
+      "properties": {
+        "extraction": {"$ref": "#/$defs/lease_policy", "default": {"lease_seconds": 180, "heartbeat_seconds": 30}},
+        "review_execution": {"$ref": "#/$defs/lease_policy", "default": {"lease_seconds": 180, "heartbeat_seconds": 30}},
+        "dialogue_execution": {"$ref": "#/$defs/lease_policy", "default": {"lease_seconds": 180, "heartbeat_seconds": 30}},
+        "outbox_claim": {"$ref": "#/$defs/lease_policy", "default": {"lease_seconds": 60, "heartbeat_seconds": 10}}
+      }
+    },
+    "recovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scan_interval_seconds",
+        "staging_orphan_grace_seconds",
+        "promoted_orphan_grace_seconds",
+        "collector_batch_size"
+      ],
+      "properties": {
+        "scan_interval_seconds": {"type": "integer", "minimum": 1, "maximum": 300, "default": 30},
+        "staging_orphan_grace_seconds": {"type": "integer", "minimum": 300, "maximum": 604800, "default": 3600},
+        "promoted_orphan_grace_seconds": {"type": "integer", "minimum": 3600, "maximum": 2592000, "default": 86400},
+        "collector_batch_size": {"type": "integer", "minimum": 1, "maximum": 1000, "default": 100}
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_upload_bytes",
+        "max_context_documents",
+        "max_pages_per_document",
+        "max_fragments_per_document",
+        "max_fragment_codepoints",
+        "max_review_input_codepoints",
+        "max_model_output_bytes",
+        "max_dialogue_message_codepoints",
+        "max_dialogue_turns",
+        "max_parallel_work_items_per_run",
+        "max_parallel_model_calls"
+      ],
+      "properties": {
+        "max_upload_bytes": {"type": "integer", "minimum": 1, "maximum": 1073741824, "default": 52428800},
+        "max_context_documents": {"type": "integer", "minimum": 0, "maximum": 50, "default": 50},
+        "max_pages_per_document": {"type": "integer", "minimum": 1, "maximum": 10000, "default": 1000},
+        "max_fragments_per_document": {"type": "integer", "minimum": 1, "maximum": 100000, "default": 20000},
+        "max_fragment_codepoints": {"type": "integer", "minimum": 1, "maximum": 1000000, "default": 20000},
+        "max_review_input_codepoints": {"type": "integer", "minimum": 1, "maximum": 10000000, "default": 500000},
+        "max_model_output_bytes": {"type": "integer", "minimum": 1024, "maximum": 104857600, "default": 1048576},
+        "max_dialogue_message_codepoints": {"type": "integer", "minimum": 1, "maximum": 1000000, "default": 20000},
+        "max_dialogue_turns": {"type": "integer", "minimum": 1, "maximum": 1000, "default": 100},
+        "max_parallel_work_items_per_run": {"type": "integer", "minimum": 1, "maximum": 64, "default": 4},
+        "max_parallel_model_calls": {"type": "integer", "minimum": 1, "maximum": 64, "default": 2}
+      }
+    },
+    "model_gateway": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["release_default", "optional_openai_compatible"],
+      "properties": {
+        "release_default": {"const": "deterministic", "default": "deterministic"},
+        "optional_openai_compatible": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled", "endpoint", "model", "secret_ref", "auto_download"],
+          "properties": {
+            "enabled": {"type": "boolean", "default": false},
+            "endpoint": {"type": ["string", "null"], "format": "uri", "maxLength": 2048, "default": null},
+            "model": {"type": ["string", "null"], "minLength": 1, "maxLength": 256, "default": null},
+            "secret_ref": {"type": ["string", "null"], "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$", "default": null},
+            "auto_download": {"const": false, "default": false}
+          },
+          "allOf": [
+            {
+              "if": {"properties": {"enabled": {"const": true}}, "required": ["enabled"]},
+              "then": {
+                "properties": {
+                  "endpoint": {"type": "string", "format": "uri", "minLength": 1},
+                  "model": {"type": "string", "minLength": 1}
+                }
+              },
+              "else": {
+                "properties": {
+                  "endpoint": {"type": "null"},
+                  "model": {"type": "null"},
+                  "secret_ref": {"type": "null"}
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "deterministic_gateway": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default_behavior", "trusted_fixture_bindings"],
+      "properties": {
+        "default_behavior": {"const": "no_semantic_analysis", "default": "no_semantic_analysis"},
+        "trusted_fixture_bindings": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "default": [],
+          "items": {"$ref": "#/$defs/trusted_fixture_binding"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "lease_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lease_seconds", "heartbeat_seconds"],
+      "properties": {
+        "lease_seconds": {"type": "integer", "minimum": 15, "maximum": 3600},
+        "heartbeat_seconds": {"type": "integer", "minimum": 1, "maximum": 300}
+      }
+    },
+    "trusted_fixture_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binding_id",
+        "primary_document_sha256",
+        "review_profile_semantic_digest",
+        "skill_package_sha256",
+        "parser_settings_digest",
+        "engine_version",
+        "expected_output_resource_id",
+        "expected_output_sha256"
+      ],
+      "properties": {
+        "binding_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+        "primary_document_sha256": {"$ref": "#/$defs/sha256"},
+        "review_profile_semantic_digest": {"$ref": "#/$defs/sha256"},
+        "skill_package_sha256": {"$ref": "#/$defs/sha256"},
+        "parser_settings_digest": {"$ref": "#/$defs/sha256"},
+        "engine_version": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$"},
+        "expected_output_resource_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+        "expected_output_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}
