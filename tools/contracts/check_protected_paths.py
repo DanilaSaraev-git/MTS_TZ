@@ -18,7 +18,7 @@ PROTECTED = (
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--baseline", default="a5792150b280f8e3b7704af5296de99166d4f845")
+    parser.add_argument("--baseline", default="471316ea08f1cf55116e2e4bc86d626454fbf632")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]

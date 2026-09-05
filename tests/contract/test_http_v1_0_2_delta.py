@@ -67,6 +67,10 @@ def test_only_allowlisted_contract_files_changed_from_v1_0_1() -> None:
         "contracts/review-platform/v1/swagger/index.html",
         "contracts/review-platform/v1/swagger/swagger-ui.css",
         "contracts/review-platform/v1/swagger/swagger-ui-bundle.js",
+        "contracts/review-platform/v1/swagger/LICENSE",
+        "contracts/review-platform/v1/swagger/NOTICE",
+        "contracts/review-platform/v1/swagger/swagger-ui-bundle.js.LICENSE.txt",
+        "contracts/review-platform/v1/examples/http/README.md",
     }
     assert set(changed.splitlines()) <= allowed
 

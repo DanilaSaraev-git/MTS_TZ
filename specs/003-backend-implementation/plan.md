@@ -49,7 +49,7 @@ Canonical input baseline:
 
 - [feature 002](../002-target-review-platform/spec.md) — общая продуктовая семантика;
 - tag `review-platform-contract-v1.0.1` и [root contracts](../../contracts/review-platform/v1/README.md) — web/skill machine boundary;
-- [target architecture](../../architecture/target-product.md) и [ADR-0001](../../docs/adr/0001-contract-first-modular-monolith.md) — module/deployment decisions;
+- [target architecture](../../docs/architecture/target-product.md) и [ADR-0001](../../docs/adr/0001-contract-first-modular-monolith.md) — module/deployment decisions;
 - [feature 001 PoC](../001-review-data-spec-poc/spec.md) — compatibility source, не reusable public API.
 
 До зависимой реализации выполняется additive contract preflight `v1.0.2`: OpenAPI `info.version`; missing `400` invalid-cursor responses для document/run lists; missing `404` upload response; `409` profile-version conflicts; полный существующий `400/404/409` conformance set; уточняющие descriptions profile/extraction/canonical ETag; локальная production API documentation. Root README/CHANGELOG, affected examples/tests и tag `review-platform-contract-v1.0.2` выпускаются вместе; FastAPI export, прежние examples и генерация/typecheck через отдельный backend-owned harness `tools/contracts/orval/` с exact Node/npm/TypeScript/Orval pins доказывают compatibility, не читая и не меняя `apps/web/`. Это изменение выпускается из feature 003 как отдельный contract commit/PR и не редактирует артефакты `specs/002-*`. Любое найденное breaking изменение останавливает только зависимый contract task и требует `/v2`; оно не маскируется в `v1`.
