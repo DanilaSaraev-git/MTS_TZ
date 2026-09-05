@@ -25,7 +25,7 @@
 - [ ] T010 [P] [BE] Создать FastAPI composition root, RFC 9457 mapper и DTO boundary в `apps/api/src/review_api/`
 - [ ] T011 [P] [BE] Создать SQLAlchemy metadata/Alembic layout и configured deployment context helper в `packages/review-runtime/src/review_runtime/postgres/`
 - [ ] T012 [P] [BE] Создать deterministic fake adapters для repository/artifact/job/model/skill в `packages/review-runtime/src/review_runtime/fakes/`
-- [ ] T013 [P] [SHARED] Зафиксировать один synthetic tracer-bullet dataset без client-материалов в `tests/fixtures/synthetic-review/`
+- [ ] T013 [P] [SHARED] Зафиксировать один synthetic tracer-bullet dataset без клиентских материалов в `tests/fixtures/synthetic-review/`
 - [ ] T014 [BE] Добавить contract tests, сравнивающие Pydantic/FastAPI export с canonical OpenAPI, в `tests/contract/test_openapi_compatibility.py`
 - [ ] T015 [WEB] Добавить generation guard, запрещающий ручной diff generated client после `npm run generate:api`, в `apps/web/package.json` и CI
 
@@ -119,7 +119,7 @@
 ## Phase 8 — Release hardening
 
 - [ ] T058 [P] [SHARED] Документировать operator bootstrap, migrations, queue recovery, явно нерешённые backup/restore policy и model configuration в `docs/operations/`
-- [ ] T059 [P] [SHARED] Добавить dependency/image vulnerability scan и проверку отсутствия client-materials/client data в public fixtures в CI
+- [ ] T059 [P] [SHARED] Добавить dependency/image vulnerability scan и проверку отсутствия customer data в public fixtures в CI
 - [ ] T060 [SHARED] Выполнить `quickstart.md`, все contract/unit/integration/security/E2E suites и сохранить release evidence без объявления продуктовых гипотез подтверждёнными
 - [ ] T061 [SHARED] Зафиксировать следующий контрактный tag и объединить contract → backend → web в порядке из `architecture/parallel-development.md`
 
@@ -146,5 +146,5 @@ US5 final T057 requires persistence/namespace T047-T049 and deploy T051-T056
 - Одновременно активен не более чем один turn на finding; модель не меняет HumanDecision.
 - Report body/ETag неизменен после dialogue/decision.
 - Bootstrap возвращает одного configured actor/workspace; ID вне namespace получает обычный `404`, а OpenAPI не содержит auth schemes или `401/403`.
-- Self-hosted restart сохраняет synthetic flow; секреты и client data отсутствуют в public DTO, fixtures и logs.
+- Self-hosted restart сохраняет synthetic flow; секреты и customer data отсутствуют в public DTO, fixtures и logs.
 - Feature 001 PoC остаётся воспроизводимым.

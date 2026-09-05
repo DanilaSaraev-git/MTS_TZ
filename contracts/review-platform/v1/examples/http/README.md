@@ -1,6 +1,6 @@
 # HTTP synthetic scenario
 
-Все JSON используют один настроенный trusted actor, одну вымышленную организацию, один workspace и один tracer-bullet flow. Это canonical fixtures для backend contract tests и web MSW; они не содержат материалы client.
+Все JSON используют один настроенный trusted actor, одну вымышленную организацию, один workspace и один tracer-bullet flow. Это canonical fixtures для backend contract tests и web MSW; они не содержат клиентские материалы.
 
 | Operation / state | Fixture |
 | --- | --- |

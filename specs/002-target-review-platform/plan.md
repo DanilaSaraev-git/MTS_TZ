@@ -26,7 +26,7 @@
 
 **Performance Goals**: no evidence-backed SLO yet. The API remains responsive by making review/dialogue generation asynchronous; large documents are processed without silent truncation. Numeric latency, throughput and concurrency targets must come from pilot constraints.
 
-**Constraints**: one primary document; PDF with text layer, Markdown or UTF-8 TXT; up to 50 optional context sources in HTTP v1; polling baseline; self-hosted operation without vendor cloud; exactly one configured organization/workspace/actor and no auth runtime; trusted network only; immutable inputs/reports; no provider secrets or client data in public contracts/fixtures
+**Constraints**: one primary document; PDF with text layer, Markdown or UTF-8 TXT; up to 50 optional context sources in HTTP v1; polling baseline; self-hosted operation without vendor cloud; exactly one configured organization/workspace/actor and no auth runtime; trusted network only; immutable inputs/reports; no provider secrets or customer data in public contracts/fixtures
 
 **Scale/Scope**: first target slice and one deployable system for one configured organization/workspace; actual document sizes, concurrent runs, retention and SLO remain unknown until pilot discovery
 
@@ -34,11 +34,11 @@
 
 *GATE before research and re-checked after design: PASS.*
 
-- Общие и client-specific материалы разделены: новые архитектурные и контрактные файлы общие, client fixtures не копируются.
+- Общие и customer-specific материалы разделены: новые архитектурные и контрактные файлы общие, клиентские fixtures не копируются.
 - Факт, предложение, решение и гипотеза различены: стек и контракт — D-18/ADR; продуктовые эффекты остаются неподтверждёнными.
 - Источники текущего поручения и внешней технической проверки зарегистрированы; версии и ограничения приведены в `research.md`.
 - Численные продуктовые цели не выдуманы. Числа в HTTP/schema — предлагаемые технические пределы первого среза, а не доказанный порог ценности.
-- PoC и его client run сохраняются; целевая система использует adapter и не переписывает исходные артефакты.
+- PoC сохраняется; клиентские runs остаются в продуктовом репозитории, а целевая система не переписывает их исходные артефакты.
 - `AGENTS.md` остаётся единственным источником инструкций; `CLAUDE.md` проверяется как относительный symlink.
 - Реализация не начинается этим планом: репозиторий получает только спецификацию, дизайн, контракты и задачи.
 
@@ -97,7 +97,7 @@ specs/002-target-review-platform/
 ├── checklists/requirements.md
 └── tasks.md
 
-architecture/
+docs/architecture/
 ├── target-product.md
 └── parallel-development.md
 
@@ -164,7 +164,7 @@ implementation/poc/                    # preserved feature 001 and compatibility
 4. **Persistence**: PostgreSQL constraints, configured-workspace namespace, artifact store, outbox/worker and restart tests.
 5. **Real model and self-hosted package**: OpenAI-compatible adapter, trusted-network Compose, operations and full E2E.
 
-The first two slices are deliberately shared foundations; after their contract generation is green, web work and backend/core work proceed in parallel as described in [parallel-development.md](../../architecture/parallel-development.md).
+The first two slices are deliberately shared foundations; after their contract generation is green, web work and backend/core work proceed in parallel as described in [parallel-development.md](../../docs/architecture/parallel-development.md).
 
 ## Complexity Tracking
 

@@ -1,0 +1,108 @@
+release:
+  name: ai-review-platform
+  owner: DanilaSaraev-git
+  intended_repository: DanilaSaraev-git/ai-review-platform
+  intended_license: none
+  distribution_label: source-visible-all-rights-reserved
+  status: REVIEW
+  source_issue: null
+  release_owner: DanilaSaraev-git repository owner
+  reviewer: null
+  approved_by: null
+  approved_at: null
+  published_at: null
+
+artifacts:
+  - id: platform-contracts
+    title: Review Platform v1 contracts and synthetic examples
+    source_provider: project repository history
+    source_locator: filtered source commits listed in commit-map.tsv
+    original_license: none
+    intended_public_license: none
+    redistribution_basis: repository-owner approval required
+    modified: true
+    modifications:
+      - removed product and customer materials
+      - normalized repository documentation and paths
+    bundle_files:
+      - contracts/**
+    decision: VERIFIED
+  - id: platform-implementation
+    title: Web, backend, worker, CLI, review modules and deployment files
+    source_provider: project repository history
+    source_locator: filtered source commits listed in commit-map.tsv
+    original_license: none
+    intended_public_license: none
+    redistribution_basis: repository-owner approval required
+    modified: true
+    modifications:
+      - removed product and customer materials
+      - retained independent implementation branches
+    bundle_files:
+      - apps/**
+      - packages/**
+      - skills/**
+      - deploy/**
+      - tests/**
+      - tools/**
+    decision: VERIFIED
+  - id: technical-design
+    title: Architecture, ADR and Spec Kit artifacts
+    source_provider: project repository history
+    source_locator: filtered source commits listed in commit-map.tsv
+    original_license: none
+    intended_public_license: none
+    redistribution_basis: repository-owner approval required
+    modified: true
+    modifications:
+      - removed product knowledge and customer evidence
+      - moved architecture under docs
+    bundle_files:
+      - docs/**
+      - specs/**
+      - .specify/**
+      - .agents/**
+    decision: VERIFIED
+  - id: swagger-ui-assets
+    title: Swagger UI 5.32.11 distribution assets
+    source_provider: swagger-api/swagger-ui
+    source_locator: npm swagger-ui-dist 5.32.11
+    source_version: 5.32.11
+    source_owner: SmartBear Software Inc. and contributors
+    original_license: Apache-2.0 with bundled dependency notices
+    intended_public_license: Apache-2.0 for these files only
+    redistribution_basis: upstream license
+    modified: false
+    bundle_files:
+      - contracts/review-platform/v1/swagger/**
+      - apps/api/src/review_api/static/docs/**
+    decision: VERIFIED
+
+excluded:
+  - product hypotheses and research
+  - customer documents, interviews, images and experiment outputs
+  - presentations and deliverables
+  - runtime environments, model weights, caches and bytecode
+  - Claude-specific duplicate Spec Kit skill installation
+
+package:
+  allowlist_file: docs/release/allowlist.txt
+  staged_tree: local filtered clone
+  readme: present
+  attribution: verified for baseline; implementation branches require branch-local notice checks
+  license: intentionally absent for owner-authored files
+  security_contact: GitHub Private Vulnerability Reporting
+  maintenance_owner: DanilaSaraev-git repository owner
+
+verification:
+  public_url: null
+  publication_commit: null
+  fresh_clone_command: git clone https://github.com/DanilaSaraev-git/ai-review-platform.git
+  fresh_clone_result: NOT-RUN
+  post_clone_private_path_scan: NOT-RUN
+  post_clone_secret_scan: NOT-RUN
+  full_commit_map: docs/release/full-commit-map.tsv
+  full_commit_map_sha256: 486b76ed381ae6c81f837ae5c124694b8c6023a148b8fc5244ebc5da508cb29c
+  scanners:
+    gitleaks: UNAVAILABLE
+    trufflehog: UNAVAILABLE

@@ -28,13 +28,7 @@ uv run --frozen review-data-spec render /absolute/path/runs/RUN_ID
 
 ## Проверка на клиентском примере
 
-Из корня репозитория, после установки:
-
-```bash
-implementation/poc/review-data-spec/.venv/bin/review-data-spec prepare 'client-materials/Тестовые данные.pdf' --profile client-materials/experiments/poc-review-data-spec/profile.json --output-root client-materials/experiments/poc-review-data-spec
-```
-
-Профиль явно подключает три заданных материала. Смысловой отчёт и протокол сохраняются в папке запуска; клиентские данные не нужны для run-demo/pytest. Результаты и пределы проверки: [протоколы client](../../client-materials/experiments/poc-review-data-spec/README.md).
+Клиентские входы, профили и результаты находятся в отдельном продуктовом репозитории. Их не копируют сюда: этот репозиторий проверяет переносимость только на синтетическом `run-demo` и синтетических тестах.
 
 ## Перенос
 
@@ -51,5 +45,5 @@ implementation/poc/review-data-spec/.venv/bin/review-data-spec prepare 'client-m
 - `uv sync --frozen --extra test` и 12 тестов прошли на macOS с Python 3.13.0; пакет требует Python 3.11+, другие ОС и версии не проверялись.
 - Чистая копия папки навыка установилась отдельно и выполнила pytest и run-demo вне репозитория.
 - Поведенческий агентный сценарий прошёл на синтетике с противоречием, отсутствующим правилом, корректной частью и инструкцией внутри ТЗ как данными; структура и цитаты получили `complete`.
-- Прогон `mts-test-data-20260904-agent` подготовил 141 фрагмент из PDF и трёх материалов контекста, сохранил хеши и прошёл validate/render; оригинальные 9 страниц визуально сверены.
+- Отдельный клиентский прогон сохранён в продуктовом репозитории; он не входит в публичную техническую поставку.
 - Навык прошёл штатный `skill-creator/quick_validate.py`. Экспертная и независимая проверка не проводилась.

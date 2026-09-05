@@ -2,7 +2,7 @@
 
 - Статус: accepted
 - Дата: 2026-09-04
-- Основание: [S-26 и S-28](../../product-knowledge/sources.md), [D-18 и D-19](../../product-knowledge/decisions.md)
+- Основание: зафиксированный архитектурный baseline целевой платформы
 
 ## Контекст
 

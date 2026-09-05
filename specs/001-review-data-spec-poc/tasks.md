@@ -36,7 +36,7 @@
 Цель: отдельный контекст клиента и ранжирование без потери замечаний. Независимая проверка: базовый/два независимых профиля, недоступный контекст, конфликт правил.
 
 - [X] T012 [US3] Добавить проверки изоляции профилей, относительных путей и сортировки в implementation/poc/review-data-spec/tests/test_prepare.py и test_validation.py.
-- [X] T013 [US3] Завершить обработку профилей/приоритетов в implementation/poc/review-data-spec/scripts/review_data_spec/prepare.py и render.py; сохранить черновой client-materials/experiments/poc-review-data-spec/profile.json.
+- [X] T013 [US3] Завершить обработку профилей/приоритетов в implementation/poc/review-data-spec/scripts/review_data_spec/prepare.py и render.py; клиентский профиль сохранить только в продуктовом репозитории.
 
 ## Phase 6: US4 — Перенос и демонстрация (P2)
 
@@ -45,11 +45,11 @@
 - [X] T014 [US4] Написать падающие CLI-тесты в implementation/poc/review-data-spec/tests/test_cli.py.
 - [X] T015 [US4] Реализовать prepare/validate/render/run-demo CLI и synthetic fixture в implementation/poc/review-data-spec/scripts/review_data_spec/cli.py, demo.py и scripts/review_data_spec.py.
 - [X] T016 [US4] Установить отдельную копию навыка без базы разработчиков; проверить pytest и run-demo по specs/001-review-data-spec-poc/quickstart.md.
-- [X] T017 [US4] Провести агентное ревью PDF, визуально сверить проблемные страницы, сохранить отчёт и протокол в client-materials/experiments/poc-review-data-spec/<run-id>/.
+- [X] T017 [US4] Провести агентное ревью PDF, визуально сверить проблемные страницы, сохранить отчёт и протокол только в продуктовом репозитории.
 
 ## Phase 7: Polish
 
-- [X] T018 Обновить карту README.md, client-materials/README.md, implementation/poc/PLAN.md, product-knowledge/decisions.md, sources.md и roadmap.md по фактическому результату.
+- [X] T018 Обновить техническую документацию PoC; продуктовые свидетельства и решения вести отдельно.
 - [X] T019 Проверить markdown-ссылки, CLAUDE.md → AGENTS.md, git ignore, исходные хеши и весь контракт; записать результаты в specs/001-review-data-spec-poc/quickstart.md.
 
 ## Dependencies & Execution Order

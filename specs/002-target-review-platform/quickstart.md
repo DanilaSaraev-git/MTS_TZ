@@ -110,7 +110,7 @@ bootstrap
 4. Дождаться contract CI и совместного review.
 5. После merge обе реализационные ветки подтягивают один commit; generated client обновляется только из canonical OpenAPI.
 
-Подробный порядок PR и merge — [architecture/parallel-development.md](../../architecture/parallel-development.md).
+Подробный порядок PR и merge — [docs/architecture/parallel-development.md](../../docs/architecture/parallel-development.md).
 
 ## 7. Что не считать готовностью продукта
 

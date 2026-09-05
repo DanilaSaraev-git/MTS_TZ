@@ -36,7 +36,7 @@
 
 Недоступный основной документ завершает run ошибкой. Optional context со статусом `partial|unavailable` и исчерпанный work item отражаются source/fragment gaps и дают partial report; никакой источник не исчезает из provenance молча.
 
-Примеры находятся в [examples/skill](examples/skill/). Они синтетические и не содержат материалы client.
+Примеры находятся в [examples/skill](examples/skill/). Они синтетические и не содержат клиентские материалы.
 
 ## Версионирование
 
@@ -56,4 +56,4 @@
 - Общий synthetic tracer bullet выполняется через MSW, real HTTP и local skill/CLI.
 - Configured-workspace namespace mismatch, stale revision, duplicate idempotency и immutable-report cases являются обязательными негативными тестами.
 
-GitHub-порядок, владельцы каталогов и merge sequence описаны в [parallel-development.md](../../../architecture/parallel-development.md).
+GitHub-порядок, владельцы каталогов и merge sequence описаны в [parallel-development.md](../../../docs/architecture/parallel-development.md).

@@ -1,0 +1,39 @@
+# AI Review Platform
+
+Технический репозиторий платформы предварительного ревью технических заданий на потоки и витрины данных. Здесь находятся web, backend, worker, CLI, review engine, переносимые навыки, машинные контракты и инфраструктура запуска.
+
+Продуктовые гипотезы, интервью, материалы заказчиков и результаты клиентских экспериментов хранятся отдельно в `ai-review-product`. В этот репозиторий разрешены только синтетические fixtures.
+
+## Карта репозитория
+
+| Каталог | Назначение |
+| --- | --- |
+| `apps/` | Web, API, worker и CLI |
+| `packages/` | Python-модули предметного ядра и runtime adapters |
+| `skills/` | Версионируемые переносимые навыки |
+| `contracts/review-platform/` | Канонические OpenAPI и JSON Schema |
+| `deploy/` | Локальная и self-hosted поставка |
+| `tests/` | Общие contract, integration и end-to-end проверки |
+| `docs/architecture/` | Целевая архитектура и порядок совместной разработки |
+| `docs/adr/` | Принятые технические решения |
+| `specs/` | Spec Kit-спецификации реализационных срезов |
+| `implementation/poc/` | Сохранённый generic PoC и compatibility baseline |
+
+Доменная терминология: [docs/domain-glossary.md](docs/domain-glossary.md). Архитектурный baseline: [docs/architecture/target-product.md](docs/architecture/target-product.md). Публичный контракт: [contracts/review-platform/v1/README.md](contracts/review-platform/v1/README.md).
+
+## Ветки реализации
+
+- `main` — общий архитектурный и контрактный baseline;
+- `codex/003-backend-implementation` — backend MVP;
+- `codex/004-llm-review-integration` — незавершённая LLM-интеграция;
+- `codex/005-web-review-ui` — web v1.
+
+Feature-ветки не считаются интегрированными, пока не прошли собственный CI и общий smoke через публичный контракт.
+
+## Лицензирование
+
+Корневая лицензия намеренно отсутствует. Публичная доступность исходного кода не предоставляет разрешения на его использование, копирование, изменение или распространение и не делает проект open source. Лицензии встроенных сторонних материалов перечислены в [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) и применяются только к соответствующим материалам.
+
+## Безопасность
+
+Не коммитьте клиентские документы, реальные credentials, `.env`, журналы с содержимым документов и локальные абсолютные пути. Порядок сообщения о проблемах описан в [SECURITY.md](SECURITY.md).

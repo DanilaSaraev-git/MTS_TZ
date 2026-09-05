@@ -1,6 +1,6 @@
 # Целевая архитектура продукта
 
-Дата: 2026-09-04. Статус: архитектурный baseline для параллельной разработки; реализация целевого среза ещё не начата. Основание: поручения пользователя [S-26 и S-28](../product-knowledge/sources.md), решения [D-18 и D-19](../product-knowledge/decisions.md), [ADR-0001](../docs/adr/0001-contract-first-modular-monolith.md).
+Дата: 2026-09-04. Статус: архитектурный baseline для параллельной разработки. Связанное решение: [ADR-0001](../adr/0001-contract-first-modular-monolith.md).
 
 ## Цель проектирования
 
@@ -24,7 +24,7 @@ flowchart LR
 
 `Review Application` — внешний глубокий модуль backend. Его интерфейс выражен операциями загрузки документа, запуска проверки, чтения состояния и отчёта, диалога и решения по замечанию. HTTP и CLI являются адаптерами к одному интерфейсу. Локальный skill не поднимает сервер и не вызывает HTTP: он использует тот же Python application/core через локальный адаптер.
 
-`Review Engine` скрывает подготовку входа, порядок шагов, вызовы модели, повторные попытки, проверку результата и фиксацию происхождения. `Skill Runtime` загружает версионируемый навык и обменивается с движком только по [контракту навыка](../contracts/review-platform/v1/README.md#engine--review-skill). `Model Gateway` нормализует различия поставщиков LLM по [порту модели](../contracts/review-platform/v1/model-adapter.md).
+`Review Engine` скрывает подготовку входа, порядок шагов, вызовы модели, повторные попытки, проверку результата и фиксацию происхождения. `Skill Runtime` загружает версионируемый навык и обменивается с движком только по [контракту навыка](../../contracts/review-platform/v1/README.md#engine--review-skill). `Model Gateway` нормализует различия поставщиков LLM по [порту модели](../../contracts/review-platform/v1/model-adapter.md).
 
 `Run Repository`, `Artifact Store` и очередь находятся за внутренними швами. Для этапа 2 используются локальные адаптеры, для этапа 3 — общие сетевые адаптеры. Это реальные швы, потому что предусмотрены как минимум две реализации каждого.
 
@@ -86,7 +86,7 @@ PoC уже реализован и остаётся самостоятельны
 | Проверки | pytest, pytest-asyncio, Vitest, Testing Library, Playwright, MSW, OpenAPI lint/diff и JSON Schema contract tests |
 | Поставка | Docker Compose: reverse proxy, API, worker и PostgreSQL; React SPA и `/api` доступны с одного origin |
 
-Точные проверенные версии и первичные источники записаны в [research.md](../specs/002-target-review-platform/research.md). TypeScript 7 пока не используется из-за переходного состояния compiler API. MinIO не входит в production baseline: его Community-репозиторий архивирован; S3 остаётся только внутренним портом к выбранному оператором хранилищу.
+Точные проверенные версии и первичные источники записаны в [research.md](../../specs/002-target-review-platform/research.md). TypeScript 7 пока не используется из-за переходного состояния compiler API. MinIO не входит в production baseline: его Community-репозиторий архивирован; S3 остаётся только внутренним портом к выбранному оператором хранилищу.
 
 Actor в bootstrap служит только для атрибуции. Он не подтверждает личность caller. Authentication, authorization и multi-organization runtime могут появиться только как отдельный будущий срез со своей спецификацией, threat model и ADR.
 

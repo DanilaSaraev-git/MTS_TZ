@@ -24,7 +24,7 @@
 
 **Performance Goals**: количественный SLO не установлен; длительность prepare фиксируется в manifest, время аналитика — отдельно при экспертной оценке.
 
-**Constraints**: локальный текстовый PDF/MD/TXT, без OCR и сетевого чтения; оригиналы неизменны; ошибки и непрочитанные области явны. Переносимая папка не содержит client.
+**Constraints**: локальный текстовый PDF/MD/TXT, без OCR и сетевого чтения; оригиналы неизменны; ошибки и непрочитанные области явны. Переносимая папка не содержит клиентские материалы.
 
 **Scale/Scope**: один документ и явно подключённые файлы на запуск. Распределённое ревью, большие корпуса и многопользовательская изоляция вне PoC.
 
@@ -33,7 +33,7 @@
 До research и после design: PASS.
 
 - Отдельное поручение на реализацию получено; следующие этапы продукта не реализуются.
-- client-профиль, входы и результаты остаются в client; синтетические данные в навыке.
+- Клиентские профили, входы и результаты остаются в продуктовом репозитории; синтетические данные — в навыке.
 - Факты, машинное извлечение, наблюдения агента и решение человека различаются.
 - Общие правила только в AGENTS.md; CLAUDE.md остаётся относительным симлинком.
 - Основания выбора и ограничения описаны; продуктовые гипотезы не объявляются проверенными.
@@ -53,7 +53,7 @@ implementation/poc/review-data-spec/
   scripts/review_data_spec/resources/{base-profile,profile.schema,report.schema}.json
   references/{workflow,report-format}.md
   tests/{test_prepare,test_validation,test_cli}.py
-client-materials/experiments/poc-review-data-spec/
+<product-repository>/client/experiments/poc-review-data-spec/
   profile.json, README.md
   <run-id>/{manifest,bundle,profile,settings,report,validation}.json
   <run-id>/{report,protocol}.md
