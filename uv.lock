@@ -1051,11 +1051,15 @@ name = "review-core"
 version = "0.1.0"
 source = { editable = "packages/review-core" }
 dependencies = [
+    { name = "anyio" },
     { name = "rfc8785" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "rfc8785", specifier = "==0.1.4" }]
+requires-dist = [
+    { name = "anyio", specifier = "==4.15.0" },
+    { name = "rfc8785", specifier = "==0.1.4" },
+]
 
 [[package]]
 name = "review-platform-backend"

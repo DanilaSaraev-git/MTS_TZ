@@ -7,6 +7,8 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from review_runtime.config.model_profiles import ModelProfile, ModelProfileSet
+
 
 class RetryPolicy(BaseModel):
     extraction_max_attempts: int = 3
@@ -91,6 +93,12 @@ class OptionalOpenAI(BaseModel):
 class ModelGatewayPolicy(BaseModel):
     release_default: str = "deterministic"
     optional_openai_compatible: OptionalOpenAI = Field(default_factory=OptionalOpenAI)
+    profiles: tuple[ModelProfile, ...] = ()
+
+    @model_validator(mode="after")
+    def exact_profile_identities(self) -> Self:
+        ModelProfileSet(profiles=self.profiles)
+        return self
 
 
 class TrustedFixtureBinding(BaseModel):

@@ -14,9 +14,9 @@ def test_exact_endpoint_rejects_credentials_query_and_fragment() -> None:
 
 
 def test_dns_allowlist_is_exact() -> None:
-    assert EndpointPolicy("http://127.0.0.1:11434", frozenset({"127.0.0.1"})).validate()
+    assert EndpointPolicy("http://127.0.0.1:11434", frozenset({"127.0.0.1"})).validate_resolved()
     with pytest.raises(ValueError):
-        EndpointPolicy("http://127.0.0.1:11434", frozenset({"127.0.0.2"})).validate()
+        EndpointPolicy("http://127.0.0.1:11434", frozenset({"127.0.0.2"})).validate_resolved()
 
 
 def test_only_fresh_available_projects_available() -> None:

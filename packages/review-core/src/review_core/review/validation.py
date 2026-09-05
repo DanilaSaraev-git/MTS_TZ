@@ -4,6 +4,15 @@ import math
 from typing import Any
 
 
+def resolve_unique_quote_offset(text: str, quote: str) -> int:
+    first = text.find(quote)
+    if first < 0:
+        raise ValueError("anchor quote does not resolve exactly")
+    if text.find(quote, first + 1) >= 0:
+        raise ValueError("anchor quote is ambiguous within its fragment")
+    return first
+
+
 def _validate_location(location: dict[str, Any]) -> None:
     if location.get("kind") == "text":
         if location["line_start"] < 1 or location["line_end"] < location["line_start"]:
@@ -48,6 +57,13 @@ def validate_report(
         for fragment_id in target
     ):
         raise ValueError("coverage contains an unknown or non-primary target")
+    for gap in coverage["gaps"]:
+        fragment_id = gap["fragment_id"]
+        if fragment_id is None:
+            continue
+        fragment = fragments.get(fragment_id)
+        if fragment is None or fragment["source_id"] != gap["source_id"]:
+            raise ValueError("coverage gap source identity mismatch")
     if coverage["status"] == "complete" and coverage["gaps"]:
         raise ValueError("complete coverage cannot contain gaps")
     if coverage["status"] == "partial" and not coverage["gaps"]:
@@ -69,8 +85,10 @@ def validate_report(
         primary_basis = False
         for anchor in anchors:
             fragment = fragments.get(anchor["fragment_id"])
-            if fragment is None or anchor["fragment_id"] not in reviewed:
-                raise ValueError("anchor must reference a reviewed fragment")
+            if fragment is None:
+                raise ValueError("anchor must reference a known fragment")
+            if fragment["source_id"] == primary_source_id and anchor["fragment_id"] not in reviewed:
+                raise ValueError("primary anchor must reference a reviewed fragment")
             if fragment["source_id"] == primary_source_id:
                 primary_basis = True
             start, end = anchor["quote_start"], anchor["quote_end"]
@@ -84,9 +102,12 @@ def validate_report(
             _validate_location(anchor["location"])
         for fragment_id in scope:
             fragment = fragments.get(fragment_id)
-            if fragment is None or fragment_id not in reviewed:
-                raise ValueError("scope must reference a reviewed fragment")
-            if fragment["source_id"] == primary_source_id:
-                primary_basis = True
+            if (
+                fragment is None
+                or fragment["source_id"] != primary_source_id
+                or fragment_id not in reviewed
+            ):
+                raise ValueError("scope must reference a reviewed primary fragment")
+            primary_basis = True
         if not primary_basis:
             raise ValueError("finding has no primary-document basis")

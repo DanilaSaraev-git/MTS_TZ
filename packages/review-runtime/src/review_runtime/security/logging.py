@@ -8,7 +8,11 @@ SAFE_KEYS = {"request_id", "trace_id", "job_id", "resource_id", "state", "code",
 REDACTIONS = (
     re.compile(r"sk-[A-Za-z0-9_-]+"),
     re.compile(r"/(?:Users|home)/[^\s]+"),
-    re.compile(r"(?i)(authorization|api[-_]?key|token)=\S+"),
+    re.compile(r"(?i)(authorization\s*:\s*bearer\s+)\S+"),
+    re.compile(
+        r"(?i)([\"']?(?:authorization|api[-_]?key|token|credential(?:_path)?)[\"']?\s*[:=]\s*)"
+        r"[\"']?[^\s,}\"']+[\"']?"
+    ),
 )
 
 
