@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-04-mts-test-data",
+  "created_at": "2026-09-04T14:52:31.918469+00:00",
+  "skill_version": "0.1.0",
+  "runtime": {
+    "python": "3.13.0",
+    "pdfplumber": "0.11.10",
+    "pdfminer.six": "20260107",
+    "pypdfium2": "5.13.0"
+  },
+  "profile_mode": "default",
+  "profile_source": "/Users/v.enbaev/.local/share/uv/tools/review-data-spec/lib/python3.13/site-packages/review_data_spec/resources/base-profile.json",
+  "sources": [
+    {
+      "id": "s001",
+      "role": "document",
+      "name": "Тестовые данные.pdf",
+      "original_path": "/Users/v.enbaev/Documents/AI analytics review/MTS/Тестовые данные.pdf",
+      "status": "available",
+      "snapshot": "sources/s001.pdf",
+      "sha256": "019f561d37b836e7aece1540144981b909046a34dd38cb300dba308eb137b426",
+      "size": 328295,
+      "parser": {
+        "name": "pdfplumber",
+        "version": "0.11.10",
+        "settings": {
+          "text": {
+            "layout": false,
+            "x_tolerance": 3,
+            "y_tolerance": 3
+          },
+          "tables": {
+            "vertical_strategy": "lines",
+            "horizontal_strategy": "lines"
+          }
+        }
+      },
+      "raw": "raw/s001.pdfplumber.json"
+    },
+    {
+      "id": "s002",
+      "role": "context",
+      "name": "Основные моменты документации.pdf",
+      "original_path": "/Users/v.enbaev/Documents/AI analytics review/MTS/Основные моменты документации.pdf",
+      "status": "available",
+      "snapshot": "sources/s002.pdf",
+      "sha256": "14e18c54b1bfc9037af473f56f0ade53d473946642ac59c0a0fa1fa63ac6558e",
+      "size": 279604,
+      "parser": {
+        "name": "pdfplumber",
+        "version": "0.11.10",
+        "settings": {
+          "text": {
+            "layout": false,
+            "x_tolerance": 3,
+            "y_tolerance": 3
+          },
+          "tables": {
+            "vertical_strategy": "lines",
+            "horizontal_strategy": "lines"
+          }
+        }
+      },
+      "raw": "raw/s002.pdfplumber.json"
+    },
+    {
+      "id": "s003",
+      "role": "context",
+      "name": "Шаблоны документации.pdf",
+      "original_path": "/Users/v.enbaev/Documents/AI analytics review/MTS/Шаблоны документации.pdf",
+      "status": "available",
+      "snapshot": "sources/s003.pdf",
+      "sha256": "a09bcbfb6c43439be468a4d9fa340fe39595f86e0e6d93f8312ec372328c578d",
+      "size": 246989,
+      "parser": {
+        "name": "pdfplumber",
+        "version": "0.11.10",
+        "settings": {
+          "text": {
+            "layout": false,
+            "x_tolerance": 3,
+            "y_tolerance": 3
+          },
+          "tables": {
+            "vertical_strategy": "lines",
+            "horizontal_strategy": "lines"
+          }
+        }
+      },
+      "raw": "raw/s003.pdfplumber.json"
+    },
+    {
+      "id": "s004",
+      "role": "context",
+      "name": "README.md",
+      "original_path": "/Users/v.enbaev/Documents/AI analytics review/MTS/README.md",
+      "status": "available",
+      "snapshot": "sources/s004.md",
+      "sha256": "500325066d3290442472d69a5820bda104ff62272e9e2c485f45afaa815fa554",
+      "size": 13495,
+      "parser": {
+        "name": "utf8-text",
+        "version": "1",
+        "settings": {
+          "encoding": "utf-8",
+          "blocks": "blank-lines"
+        }
+      },
+      "raw": "raw/s004.utf8-text.json"
+    },
+    {
+      "id": "s005",
+      "role": "context",
+      "name": "document-analysis.md",
+      "original_path": "/Users/v.enbaev/Documents/AI analytics review/MTS/document-analysis.md",
+      "status": "available",
+      "snapshot": "sources/s005.md",
+      "sha256": "ed721956716568c8f36d017d195aa622c90481338e040f5f02b87bcfcad53260",
+      "size": 8921,
+      "parser": {
+        "name": "utf8-text",
+        "version": "1",
+        "settings": {
+          "encoding": "utf-8",
+          "blocks": "blank-lines"
+        }
+      },
+      "raw": "raw/s005.utf8-text.json"
+    }
+  ],
+  "artifacts": {
+    "bundle.json": "fa7d2bf933b63dabc29dbbdc355aede170cb2f3637f88e0043f57dd937be3fdf",
+    "profile.json": "ec78bfcddae22a28c249ceb19da3ff38fd3231f0788f3eee9eb5bb02a5a54b93",
+    "settings.json": "823969b86926f92495d045a0026c26ed44a6fbff6afbafd6927c09d8e688b965",
+    "report.template.json": "9ed50ff49f8132f3d0e544fdcfcc226b2a3ee0482e1fec00f9f549faecfc39de",
+    "raw/s001.pdfplumber.json": "15be9eb7153b8f1abdf035e92aeef2a9d6c9207c6c128f872d776610426ca084",
+    "raw/s002.pdfplumber.json": "ca840ce567573c5aa27256b64f7884d41525a201d96d213eddab0262a05efd40",
+    "raw/s003.pdfplumber.json": "07d07ce621a3b75a6f3fdedcab1f670fc2b5f0dc33c4ca1e352bbdf778108a95",
+    "raw/s004.utf8-text.json": "3c76ee5d7a20dc95ab308c94947169e6b7c7610ca3fd1657d5df4b5da6ca3576",
+    "raw/s005.utf8-text.json": "787d1b894d9b5354cd6c2986b9fe593e288e3c72b9a889d136629b8684cb9e2e"
+  },
+  "prepare_seconds": 0.540068
+}

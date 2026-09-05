@@ -1,0 +1,3403 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-04-mts-test-data",
+  "sources": [
+    {
+      "id": "s001",
+      "role": "document",
+      "name": "Тестовые данные.pdf",
+      "status": "available"
+    },
+    {
+      "id": "s002",
+      "role": "context",
+      "name": "Основные моменты документации.pdf",
+      "status": "available"
+    },
+    {
+      "id": "s003",
+      "role": "context",
+      "name": "Шаблоны документации.pdf",
+      "status": "available"
+    },
+    {
+      "id": "s004",
+      "role": "context",
+      "name": "README.md",
+      "status": "available"
+    },
+    {
+      "id": "s005",
+      "role": "context",
+      "name": "document-analysis.md",
+      "status": "available"
+    }
+  ],
+  "fragments": [
+    {
+      "id": "s001-p0001-text",
+      "source_id": "s001",
+      "kind": "text",
+      "text": "Описание:\nПример данных состоит из 3 примеров документов:\n1. Описание потоков данных.\n2. Описание данных системы источника.\n3. Описание витрины-агрегата.\nВсе данные в документах обезличены.\nОсновная цель – разработать систему, которая бы могла от лица аналитика,\nразработчика или тестировщика анализировать документацию и указывать\nместа, которые нужно дополнить/скорректировать.\nОсновные места, на которые надо обратить внимание:\n1. Описание расположения источников и Kafka-кластеров.\n2. Описание полей и логики их расчета.\n3. Описание фильтрации данных.\n4. Описание обновления и объема данных.\nТестирование работы алгоритма будет проходить на новом документе по\nописанию витрины-агрегата.\nРабота носит творческий характер и направлена в целом на развитие\nкомпетенций в сфере сопровождения документацией объектов данных.\nМетрика – качественный показатель указания на дополняемые моменты.\nВ случае необходимости, документацию для обучения можно брать любую\nдругую – например, из открытого доступа.",
+      "location": {
+        "page": 1,
+        "bbox": [
+          0,
+          0,
+          595.32,
+          841.92
+        ]
+      }
+    },
+    {
+      "id": "s001-p0002-text",
+      "source_id": "s001",
+      "kind": "text",
+      "text": "Общие сведения\nМодуль обеспечивает получение сведений о текущем и историческом\nместоположении абонентских устройств в реальном времени. Обработка\nоснована на сигнальном трафике сетей радиодоступа (3G/4G), поступающем\nот платформы PROVIDER_GEO.\nРешаемая проблема\nЗамена устаревшей технологии геолокации абонентов по данным\nрадиоинтерфейса. Цель — создание отечественного решения с потоковой\nобработкой и интеграцией в Data Lake.\nПродуктовые метрики\n Задержка: < 1 мин\n Пропускная способность: до 100 000 событий/сек\n Точность локации: 3G — 50–500 м, 4G — 10–100 м\nЗаказчики\nBigData Unit X\nНефункциональные требования\n Инкрементная загрузка по часовым партициям\n Географическое разбиение по регионам\n Стриминг в реальном времени (задержка ≈ 0 сек)\n Хранение: Kafka — 24 ч, RAW-слой — 30 дней\nСистемы-источники\n PROVIDER_GEO — мультивендорная платформа агрегации событий\n3G/4G и MDT.\nСхема потоков данных\nPROVIDER_GEO → Kafka (топики по регионам) → Apache Flink → RAW →\nDDS → ADDS → CDM\n Мониторинг: LINK_DASHBOARD_GEO\n Исходный код: LINK_GITLAB_PROJECT\nJIRA\nPROJECT-XX123 — Описание потоковой обработки геоданных\nLINK_JIRA_TASK\nКоманда\n USER_A — Product Owner\n USER_B — Data Analyst\n USER_C — Backend Developer",
+      "location": {
+        "page": 2,
+        "bbox": [
+          0,
+          0,
+          595.32,
+          841.92
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-text",
+      "source_id": "s001",
+      "kind": "text",
+      "text": "Источники и приемники данных\nPROVIDER_GEO → Kafka (24 часа хранения):\nРегион Топик 3G Топик 4G\nЦентр TOPIC_GEO3G_CENTRAL TOPIC_GEO4G_CENTRAL\nДальний Восток TOPIC_GEO3G_EAST TOPIC_GEO4G_EAST\nСеверо-Запад TOPIC_GEO3G_NW TOPIC_GEO4G_NW\nПоволжье TOPIC_GEO3G_VOLGA TOPIC_GEO4G_VOLGA\nСибирь TOPIC_GEO3G_SIB TOPIC_GEO4G_SIB\nЮг TOPIC_GEO3G_SOUTH TOPIC_GEO4G_SOUTH\nУрал TOPIC_GEO3G_URAL TOPIC_GEO4G_URAL\nПриемники:\nСлой Таблица Описание\nRAW TABLE_GEO_RAW_3G Данные по 3G (необработанные)\nRAW TABLE_GEO_RAW_4G Данные по 4G (необработанные)\nDDS TABLE_GEO_DDS_DETAILED Детальные события геолокации\nADDS TABLE_GEO_ADDS_AGG Агрегированные события\nCDM TABLE_GEO_CDM_INTERVALS Геоинтервалы по абонентам\nСтруктура данных\nТаблица: TABLE_GEO_RAW_3G\nПоле Тип данных Описание\nFIELD_REGION string Регион\nFIELD_DATE_EVENT date Дата события\nFIELD_HOUR int Час события (партиция)\nFIELD_IMSI string IMSI\nFIELD_MSISDN string MSISDN\nFIELD_IMEI string IMEI\nFIELD_LAT double Широта геопозиции\nFIELD_LON double Долгота геопозиции\nFIELD_RADIUS int Радиус точности (метры)\nFIELD_CELL_START long ID начальной базовой станции\nFIELD_CELL_END long ID конечной БС\nFIELD_TIME_START long Время начала события\nFIELD_TIME_END long Время окончания события\nFIELD_LOC_ACCURACY int Точность локации (метры)\nFIELD_VENDOR string Вендор оборудования БС\nТаблица: TABLE_GEO_RAW_4G\nПоле Тип данных Описание\nFIELD_REGION string Регион\nFIELD_DATE_EVENT date Дата события\nFIELD_HOUR int Час события (партиция)\nFIELD_IMSI string IMSI\nFIELD_MSISDN string MSISDN",
+      "location": {
+        "page": 3,
+        "bbox": [
+          0,
+          0,
+          595.32,
+          841.92
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t001-r001",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Регион | Топик 3G | Топик 4G",
+      "cells": [
+        "Регион",
+        "Топик 3G",
+        "Топик 4G"
+      ],
+      "location": {
+        "page": 3,
+        "table": 1,
+        "row": 1,
+        "bbox": [
+          85.344,
+          107.65999999999997,
+          552.9400200000001,
+          222.14
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t001-r002",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Центр | TOPIC_GEO3G_CENTRAL | TOPIC_GEO4G_CENTRAL",
+      "cells": [
+        "Центр",
+        "TOPIC_GEO3G_CENTRAL",
+        "TOPIC_GEO4G_CENTRAL"
+      ],
+      "location": {
+        "page": 3,
+        "table": 1,
+        "row": 2,
+        "bbox": [
+          85.344,
+          107.65999999999997,
+          552.9400200000001,
+          222.14
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t001-r003",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Дальний Восток | TOPIC_GEO3G_EAST | TOPIC_GEO4G_EAST",
+      "cells": [
+        "Дальний Восток",
+        "TOPIC_GEO3G_EAST",
+        "TOPIC_GEO4G_EAST"
+      ],
+      "location": {
+        "page": 3,
+        "table": 1,
+        "row": 3,
+        "bbox": [
+          85.344,
+          107.65999999999997,
+          552.9400200000001,
+          222.14
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t001-r004",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Северо-Запад | TOPIC_GEO3G_NW | TOPIC_GEO4G_NW",
+      "cells": [
+        "Северо-Запад",
+        "TOPIC_GEO3G_NW",
+        "TOPIC_GEO4G_NW"
+      ],
+      "location": {
+        "page": 3,
+        "table": 1,
+        "row": 4,
+        "bbox": [
+          85.344,
+          107.65999999999997,
+          552.9400200000001,
+          222.14
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t001-r005",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Поволжье | TOPIC_GEO3G_VOLGA | TOPIC_GEO4G_VOLGA",
+      "cells": [
+        "Поволжье",
+        "TOPIC_GEO3G_VOLGA",
+        "TOPIC_GEO4G_VOLGA"
+      ],
+      "location": {
+        "page": 3,
+        "table": 1,
+        "row": 5,
+        "bbox": [
+          85.344,
+          107.65999999999997,
+          552.9400200000001,
+          222.14
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t001-r006",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Сибирь | TOPIC_GEO3G_SIB | TOPIC_GEO4G_SIB",
+      "cells": [
+        "Сибирь",
+        "TOPIC_GEO3G_SIB",
+        "TOPIC_GEO4G_SIB"
+      ],
+      "location": {
+        "page": 3,
+        "table": 1,
+        "row": 6,
+        "bbox": [
+          85.344,
+          107.65999999999997,
+          552.9400200000001,
+          222.14
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t001-r007",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Юг | TOPIC_GEO3G_SOUTH | TOPIC_GEO4G_SOUTH",
+      "cells": [
+        "Юг",
+        "TOPIC_GEO3G_SOUTH",
+        "TOPIC_GEO4G_SOUTH"
+      ],
+      "location": {
+        "page": 3,
+        "table": 1,
+        "row": 7,
+        "bbox": [
+          85.344,
+          107.65999999999997,
+          552.9400200000001,
+          222.14
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t001-r008",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Урал | TOPIC_GEO3G_URAL | TOPIC_GEO4G_URAL",
+      "cells": [
+        "Урал",
+        "TOPIC_GEO3G_URAL",
+        "TOPIC_GEO4G_URAL"
+      ],
+      "location": {
+        "page": 3,
+        "table": 1,
+        "row": 8,
+        "bbox": [
+          85.344,
+          107.65999999999997,
+          552.9400200000001,
+          222.14
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t002-r001",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Слой | Таблица | Описание",
+      "cells": [
+        "Слой",
+        "Таблица",
+        "Описание"
+      ],
+      "location": {
+        "page": 3,
+        "table": 2,
+        "row": 1,
+        "bbox": [
+          85.344,
+          273.409995,
+          552.9400200000001,
+          359.21000999999995
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t002-r002",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "RAW | TABLE_GEO_RAW_3G | Данные по 3G (необработанные)",
+      "cells": [
+        "RAW",
+        "TABLE_GEO_RAW_3G",
+        "Данные по 3G (необработанные)"
+      ],
+      "location": {
+        "page": 3,
+        "table": 2,
+        "row": 2,
+        "bbox": [
+          85.344,
+          273.409995,
+          552.9400200000001,
+          359.21000999999995
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t002-r003",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "RAW | TABLE_GEO_RAW_4G | Данные по 4G (необработанные)",
+      "cells": [
+        "RAW",
+        "TABLE_GEO_RAW_4G",
+        "Данные по 4G (необработанные)"
+      ],
+      "location": {
+        "page": 3,
+        "table": 2,
+        "row": 3,
+        "bbox": [
+          85.344,
+          273.409995,
+          552.9400200000001,
+          359.21000999999995
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t002-r004",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "DDS | TABLE_GEO_DDS_DETAILED | Детальные события геолокации",
+      "cells": [
+        "DDS",
+        "TABLE_GEO_DDS_DETAILED",
+        "Детальные события геолокации"
+      ],
+      "location": {
+        "page": 3,
+        "table": 2,
+        "row": 4,
+        "bbox": [
+          85.344,
+          273.409995,
+          552.9400200000001,
+          359.21000999999995
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t002-r005",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "ADDS | TABLE_GEO_ADDS_AGG | Агрегированные события",
+      "cells": [
+        "ADDS",
+        "TABLE_GEO_ADDS_AGG",
+        "Агрегированные события"
+      ],
+      "location": {
+        "page": 3,
+        "table": 2,
+        "row": 5,
+        "bbox": [
+          85.344,
+          273.409995,
+          552.9400200000001,
+          359.21000999999995
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t002-r006",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "CDM | TABLE_GEO_CDM_INTERVALS | Геоинтервалы по абонентам",
+      "cells": [
+        "CDM",
+        "TABLE_GEO_CDM_INTERVALS",
+        "Геоинтервалы по абонентам"
+      ],
+      "location": {
+        "page": 3,
+        "table": 2,
+        "row": 6,
+        "bbox": [
+          85.344,
+          273.409995,
+          552.9400200000001,
+          359.21000999999995
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r001",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Поле | Тип данных | Описание",
+      "cells": [
+        "Поле",
+        "Тип данных",
+        "Описание"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 1,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r002",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_REGION | string | Регион",
+      "cells": [
+        "FIELD_REGION",
+        "string",
+        "Регион"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 2,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r003",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_DATE_EVENT | date | Дата события",
+      "cells": [
+        "FIELD_DATE_EVENT",
+        "date",
+        "Дата события"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 3,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r004",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_HOUR | int | Час события (партиция)",
+      "cells": [
+        "FIELD_HOUR",
+        "int",
+        "Час события (партиция)"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 4,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r005",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_IMSI | string | IMSI",
+      "cells": [
+        "FIELD_IMSI",
+        "string",
+        "IMSI"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 5,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r006",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_MSISDN | string | MSISDN",
+      "cells": [
+        "FIELD_MSISDN",
+        "string",
+        "MSISDN"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 6,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r007",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_IMEI | string | IMEI",
+      "cells": [
+        "FIELD_IMEI",
+        "string",
+        "IMEI"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 7,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r008",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_LAT | double | Широта геопозиции",
+      "cells": [
+        "FIELD_LAT",
+        "double",
+        "Широта геопозиции"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 8,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r009",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_LON | double | Долгота геопозиции",
+      "cells": [
+        "FIELD_LON",
+        "double",
+        "Долгота геопозиции"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 9,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r010",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_RADIUS | int | Радиус точности (метры)",
+      "cells": [
+        "FIELD_RADIUS",
+        "int",
+        "Радиус точности (метры)"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 10,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r011",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_CELL_START | long | ID начальной базовой станции",
+      "cells": [
+        "FIELD_CELL_START",
+        "long",
+        "ID начальной базовой станции"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 11,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r012",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_CELL_END | long | ID конечной БС",
+      "cells": [
+        "FIELD_CELL_END",
+        "long",
+        "ID конечной БС"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 12,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r013",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_TIME_START | long | Время начала события",
+      "cells": [
+        "FIELD_TIME_START",
+        "long",
+        "Время начала события"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 13,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r014",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_TIME_END | long | Время окончания события",
+      "cells": [
+        "FIELD_TIME_END",
+        "long",
+        "Время окончания события"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 14,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r015",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_LOC_ACCURACY | int | Точность локации (метры)",
+      "cells": [
+        "FIELD_LOC_ACCURACY",
+        "int",
+        "Точность локации (метры)"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 15,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t003-r016",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_VENDOR | string | Вендор оборудования БС",
+      "cells": [
+        "FIELD_VENDOR",
+        "string",
+        "Вендор оборудования БС"
+      ],
+      "location": {
+        "page": 3,
+        "table": 3,
+        "row": 16,
+        "bbox": [
+          85.344,
+          435.77000999999996,
+          552.9400200000001,
+          664.6600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t004-r001",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Поле | Тип данных | Описание",
+      "cells": [
+        "Поле",
+        "Тип данных",
+        "Описание"
+      ],
+      "location": {
+        "page": 3,
+        "table": 4,
+        "row": 1,
+        "bbox": [
+          85.344,
+          690.4600100000001,
+          552.9400200000001,
+          776.2559799999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t004-r002",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_REGION | string | Регион",
+      "cells": [
+        "FIELD_REGION",
+        "string",
+        "Регион"
+      ],
+      "location": {
+        "page": 3,
+        "table": 4,
+        "row": 2,
+        "bbox": [
+          85.344,
+          690.4600100000001,
+          552.9400200000001,
+          776.2559799999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t004-r003",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_DATE_EVENT | date | Дата события",
+      "cells": [
+        "FIELD_DATE_EVENT",
+        "date",
+        "Дата события"
+      ],
+      "location": {
+        "page": 3,
+        "table": 4,
+        "row": 3,
+        "bbox": [
+          85.344,
+          690.4600100000001,
+          552.9400200000001,
+          776.2559799999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t004-r004",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_HOUR | int | Час события (партиция)",
+      "cells": [
+        "FIELD_HOUR",
+        "int",
+        "Час события (партиция)"
+      ],
+      "location": {
+        "page": 3,
+        "table": 4,
+        "row": 4,
+        "bbox": [
+          85.344,
+          690.4600100000001,
+          552.9400200000001,
+          776.2559799999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t004-r005",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_IMSI | string | IMSI",
+      "cells": [
+        "FIELD_IMSI",
+        "string",
+        "IMSI"
+      ],
+      "location": {
+        "page": 3,
+        "table": 4,
+        "row": 5,
+        "bbox": [
+          85.344,
+          690.4600100000001,
+          552.9400200000001,
+          776.2559799999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0003-t004-r006",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_MSISDN | string | MSISDN",
+      "cells": [
+        "FIELD_MSISDN",
+        "string",
+        "MSISDN"
+      ],
+      "location": {
+        "page": 3,
+        "table": 4,
+        "row": 6,
+        "bbox": [
+          85.344,
+          690.4600100000001,
+          552.9400200000001,
+          776.2559799999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0004-text",
+      "source_id": "s001",
+      "kind": "text",
+      "text": "FIELD_IMEI string IMEI\nFIELD_LAT double Широта геопозиции\nFIELD_LON double Долгота геопозиции\nFIELD_RADIUS int Радиус точности (метры)\nFIELD_CELL_START long ID начальной БС\nFIELD_CELL_END long ID конечной БС\nFIELD_TIME_START long Время начала события (Unix-\nвремя)\nFIELD_TIME_END long Время окончания события\nFIELD_SERVICE_TYPE int Тип формата связи (услуга)\nДополнительная информация\nДокументы:\n «Описание протоколов сигнальных сообщений в 3G/4G»\n «Форматы MDT и Measurement Trigger»\nАлгоритмы: обработка хэндоверов, геоинтервалов, работа с RNC/eNodeB.",
+      "location": {
+        "page": 4,
+        "bbox": [
+          0,
+          0,
+          595.32,
+          841.92
+        ]
+      }
+    },
+    {
+      "id": "s001-p0004-t001-r001",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_IMEI | string | IMEI",
+      "cells": [
+        "FIELD_IMEI",
+        "string",
+        "IMEI"
+      ],
+      "location": {
+        "page": 4,
+        "table": 1,
+        "row": 1,
+        "bbox": [
+          85.344,
+          56.879999999999995,
+          552.9400200000001,
+          199.45999999999992
+        ]
+      }
+    },
+    {
+      "id": "s001-p0004-t001-r002",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_LAT | double | Широта геопозиции",
+      "cells": [
+        "FIELD_LAT",
+        "double",
+        "Широта геопозиции"
+      ],
+      "location": {
+        "page": 4,
+        "table": 1,
+        "row": 2,
+        "bbox": [
+          85.344,
+          56.879999999999995,
+          552.9400200000001,
+          199.45999999999992
+        ]
+      }
+    },
+    {
+      "id": "s001-p0004-t001-r003",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_LON | double | Долгота геопозиции",
+      "cells": [
+        "FIELD_LON",
+        "double",
+        "Долгота геопозиции"
+      ],
+      "location": {
+        "page": 4,
+        "table": 1,
+        "row": 3,
+        "bbox": [
+          85.344,
+          56.879999999999995,
+          552.9400200000001,
+          199.45999999999992
+        ]
+      }
+    },
+    {
+      "id": "s001-p0004-t001-r004",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_RADIUS | int | Радиус точности (метры)",
+      "cells": [
+        "FIELD_RADIUS",
+        "int",
+        "Радиус точности (метры)"
+      ],
+      "location": {
+        "page": 4,
+        "table": 1,
+        "row": 4,
+        "bbox": [
+          85.344,
+          56.879999999999995,
+          552.9400200000001,
+          199.45999999999992
+        ]
+      }
+    },
+    {
+      "id": "s001-p0004-t001-r005",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_CELL_START | long | ID начальной БС",
+      "cells": [
+        "FIELD_CELL_START",
+        "long",
+        "ID начальной БС"
+      ],
+      "location": {
+        "page": 4,
+        "table": 1,
+        "row": 5,
+        "bbox": [
+          85.344,
+          56.879999999999995,
+          552.9400200000001,
+          199.45999999999992
+        ]
+      }
+    },
+    {
+      "id": "s001-p0004-t001-r006",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_CELL_END | long | ID конечной БС",
+      "cells": [
+        "FIELD_CELL_END",
+        "long",
+        "ID конечной БС"
+      ],
+      "location": {
+        "page": 4,
+        "table": 1,
+        "row": 6,
+        "bbox": [
+          85.344,
+          56.879999999999995,
+          552.9400200000001,
+          199.45999999999992
+        ]
+      }
+    },
+    {
+      "id": "s001-p0004-t001-r007",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_TIME_START | long | Время начала события (Unix-\nвремя)",
+      "cells": [
+        "FIELD_TIME_START",
+        "long",
+        "Время начала события (Unix-\nвремя)"
+      ],
+      "location": {
+        "page": 4,
+        "table": 1,
+        "row": 7,
+        "bbox": [
+          85.344,
+          56.879999999999995,
+          552.9400200000001,
+          199.45999999999992
+        ]
+      }
+    },
+    {
+      "id": "s001-p0004-t001-r008",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_TIME_END | long | Время окончания события",
+      "cells": [
+        "FIELD_TIME_END",
+        "long",
+        "Время окончания события"
+      ],
+      "location": {
+        "page": 4,
+        "table": 1,
+        "row": 8,
+        "bbox": [
+          85.344,
+          56.879999999999995,
+          552.9400200000001,
+          199.45999999999992
+        ]
+      }
+    },
+    {
+      "id": "s001-p0004-t001-r009",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_SERVICE_TYPE | int | Тип формата связи (услуга)",
+      "cells": [
+        "FIELD_SERVICE_TYPE",
+        "int",
+        "Тип формата связи (услуга)"
+      ],
+      "location": {
+        "page": 4,
+        "table": 1,
+        "row": 9,
+        "bbox": [
+          85.344,
+          56.879999999999995,
+          552.9400200000001,
+          199.45999999999992
+        ]
+      }
+    },
+    {
+      "id": "s001-p0005-text",
+      "source_id": "s001",
+      "kind": "text",
+      "text": "Общие сведения\nПлатформа обслуживает prepaid-абонентов. Файлы, поступающие с системы,\nсодержат телеком-события абонентов, заведённых на платформе.\nЗаказчики\nBigData\nСистемы-источники\nPI_System — система сбора CDR-файлов с сетевых элементов подвижной\nсвязи.\nКоманда\n USER_A — Product Owner\n USER_B — Data Analyst\n USER_C — Backend Developer\nИсточники и приёмники данных\nИсточники (CDR в формате CSV, сжатые gzip)\nДанные поступают в Kafka по топикам, соответствующим регионам:\nРегион Kafka-топик SFTP-папка HDFS\nЦентр TOPIC_MSCP_CDR_CENTRAL Папка\nДальний Восток TOPIC_MSCP_CDR_EAST Папка\nСибирь TOPIC_MSCP_CDR_SIB Папка\nСеверо-Запад TOPIC_MSCP_CDR_NW Папка\nПоволжье TOPIC_MSCP_CDR_VOLGA Папка\nЮг TOPIC_MSCP_CDR_SOUTH Папка\nПриёмники:\n TABLE_MSCP_RAW_KFK — необработанные CDR из Kafka (ORC)\n TABLE_MSCP_RAW_SFTP — необработанные CDR из SFTP (CSV)\nАлгоритм обработки потока\nШаг 1. Фильтрация данных\nУчитываются только события, произошедшие не ранее 7 дней назад и не\nпозже 2 часов вперёд от текущего времени (на стороне обработки).\nШаг 2. Преобразования на потоке\nОчистка числовых строк от лидирующих нулей:\nИз этих полей удаляются лидирующие нули до первого значимого символа.\nКоррекция часового пояса для временных меток:\n Для региона east: 7 часов\n Для регионов central, nw, volga, south: 3 часа",
+      "location": {
+        "page": 5,
+        "bbox": [
+          0,
+          0,
+          595.32,
+          841.92
+        ]
+      }
+    },
+    {
+      "id": "s001-p0005-t001-r001",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Регион | Kafka-топик | SFTP-папка HDFS",
+      "cells": [
+        "Регион",
+        "Kafka-топик",
+        "SFTP-папка HDFS"
+      ],
+      "location": {
+        "page": 5,
+        "table": 1,
+        "row": 1,
+        "bbox": [
+          85.34400000000001,
+          376.61000999999993,
+          538.7799899999999,
+          476.71000999999995
+        ]
+      }
+    },
+    {
+      "id": "s001-p0005-t001-r002",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Центр | TOPIC_MSCP_CDR_CENTRAL | Папка",
+      "cells": [
+        "Центр",
+        "TOPIC_MSCP_CDR_CENTRAL",
+        "Папка"
+      ],
+      "location": {
+        "page": 5,
+        "table": 1,
+        "row": 2,
+        "bbox": [
+          85.34400000000001,
+          376.61000999999993,
+          538.7799899999999,
+          476.71000999999995
+        ]
+      }
+    },
+    {
+      "id": "s001-p0005-t001-r003",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Дальний Восток | TOPIC_MSCP_CDR_EAST | Папка",
+      "cells": [
+        "Дальний Восток",
+        "TOPIC_MSCP_CDR_EAST",
+        "Папка"
+      ],
+      "location": {
+        "page": 5,
+        "table": 1,
+        "row": 3,
+        "bbox": [
+          85.34400000000001,
+          376.61000999999993,
+          538.7799899999999,
+          476.71000999999995
+        ]
+      }
+    },
+    {
+      "id": "s001-p0005-t001-r004",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Сибирь | TOPIC_MSCP_CDR_SIB | Папка",
+      "cells": [
+        "Сибирь",
+        "TOPIC_MSCP_CDR_SIB",
+        "Папка"
+      ],
+      "location": {
+        "page": 5,
+        "table": 1,
+        "row": 4,
+        "bbox": [
+          85.34400000000001,
+          376.61000999999993,
+          538.7799899999999,
+          476.71000999999995
+        ]
+      }
+    },
+    {
+      "id": "s001-p0005-t001-r005",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Северо-Запад | TOPIC_MSCP_CDR_NW | Папка",
+      "cells": [
+        "Северо-Запад",
+        "TOPIC_MSCP_CDR_NW",
+        "Папка"
+      ],
+      "location": {
+        "page": 5,
+        "table": 1,
+        "row": 5,
+        "bbox": [
+          85.34400000000001,
+          376.61000999999993,
+          538.7799899999999,
+          476.71000999999995
+        ]
+      }
+    },
+    {
+      "id": "s001-p0005-t001-r006",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Поволжье | TOPIC_MSCP_CDR_VOLGA | Папка",
+      "cells": [
+        "Поволжье",
+        "TOPIC_MSCP_CDR_VOLGA",
+        "Папка"
+      ],
+      "location": {
+        "page": 5,
+        "table": 1,
+        "row": 6,
+        "bbox": [
+          85.34400000000001,
+          376.61000999999993,
+          538.7799899999999,
+          476.71000999999995
+        ]
+      }
+    },
+    {
+      "id": "s001-p0005-t001-r007",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Юг | TOPIC_MSCP_CDR_SOUTH | Папка",
+      "cells": [
+        "Юг",
+        "TOPIC_MSCP_CDR_SOUTH",
+        "Папка"
+      ],
+      "location": {
+        "page": 5,
+        "table": 1,
+        "row": 7,
+        "bbox": [
+          85.34400000000001,
+          376.61000999999993,
+          538.7799899999999,
+          476.71000999999995
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-text",
+      "source_id": "s001",
+      "kind": "text",
+      "text": " Примечание: регион sib соответствует east.\nСтруктура данных\nТаблица: TABLE_MSCP_RAW_KFK\n(из Kafka, ORC-формат, 15 полей)\nПоле Тип данных Описание\nFIELD_REGION string Название региона\nFIELD_BIZ_DATE date Бизнес-дата события\nFIELD_HOUR int Часовая партиция\nFIELD_IMSI bigint IMSI\nFIELD_CALLING_NUMBER string Номер вызывающего абонента\nFIELD_CALLED_NUMBER string Номер вызываемого абонента\nFIELD_CALL_START_TIME timestamp Время начала вызова\nFIELD_CALL_END_TIME timestamp Время окончания вызова\nFIELD_CALL_DURATION int Длительность вызова (сек)\nFIELD_IS_ROAMING string Признак роуминга (true/false)\nFIELD_OL_SERVICE_TYPE tinyint Тип сервиса\nFIELD_TIME_ZONE_SHIFT string Сдвиг часового пояса\nFIELD_TIMEZONE_CALC int Вычисленный сдвиг в минутах\nFIELD_BALANCE double Текущий баланс абонента\nFIELD_BALANCE_EXPIRE timestamp Срок истечения баланса\nFAQ (обобщённо, без реальных ссылок)\nТип события (голос, SMS, данные):\nОпределяется по FIELD_OL_SERVICE_TYPE (см. выше).\nОпределение технологии связи (2G/3G/4G/5G):\nДля data-трафика — по полю radioAccessTechnology.\nДля голоса и SMS — косвенно: по наличию/отсутствию полей геолокации\n(например, CELL_ID, LAC).",
+      "location": {
+        "page": 6,
+        "bbox": [
+          0,
+          0,
+          595.32,
+          841.92
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r001",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Поле | Тип данных | Описание",
+      "cells": [
+        "Поле",
+        "Тип данных",
+        "Описание"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 1,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r002",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_REGION | string | Название региона",
+      "cells": [
+        "FIELD_REGION",
+        "string",
+        "Название региона"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 2,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r003",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_BIZ_DATE | date | Бизнес-дата события",
+      "cells": [
+        "FIELD_BIZ_DATE",
+        "date",
+        "Бизнес-дата события"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 3,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r004",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_HOUR | int | Часовая партиция",
+      "cells": [
+        "FIELD_HOUR",
+        "int",
+        "Часовая партиция"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 4,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r005",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_IMSI | bigint | IMSI",
+      "cells": [
+        "FIELD_IMSI",
+        "bigint",
+        "IMSI"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 5,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r006",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_CALLING_NUMBER | string | Номер вызывающего абонента",
+      "cells": [
+        "FIELD_CALLING_NUMBER",
+        "string",
+        "Номер вызывающего абонента"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 6,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r007",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_CALLED_NUMBER | string | Номер вызываемого абонента",
+      "cells": [
+        "FIELD_CALLED_NUMBER",
+        "string",
+        "Номер вызываемого абонента"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 7,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r008",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_CALL_START_TIME | timestamp | Время начала вызова",
+      "cells": [
+        "FIELD_CALL_START_TIME",
+        "timestamp",
+        "Время начала вызова"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 8,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r009",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_CALL_END_TIME | timestamp | Время окончания вызова",
+      "cells": [
+        "FIELD_CALL_END_TIME",
+        "timestamp",
+        "Время окончания вызова"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 9,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r010",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_CALL_DURATION | int | Длительность вызова (сек)",
+      "cells": [
+        "FIELD_CALL_DURATION",
+        "int",
+        "Длительность вызова (сек)"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 10,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r011",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_IS_ROAMING | string | Признак роуминга (true/false)",
+      "cells": [
+        "FIELD_IS_ROAMING",
+        "string",
+        "Признак роуминга (true/false)"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 11,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r012",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_OL_SERVICE_TYPE | tinyint | Тип сервиса",
+      "cells": [
+        "FIELD_OL_SERVICE_TYPE",
+        "tinyint",
+        "Тип сервиса"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 12,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r013",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_TIME_ZONE_SHIFT | string | Сдвиг часового пояса",
+      "cells": [
+        "FIELD_TIME_ZONE_SHIFT",
+        "string",
+        "Сдвиг часового пояса"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 13,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r014",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_TIMEZONE_CALC | int | Вычисленный сдвиг в минутах",
+      "cells": [
+        "FIELD_TIMEZONE_CALC",
+        "int",
+        "Вычисленный сдвиг в минутах"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 14,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r015",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_BALANCE | double | Текущий баланс абонента",
+      "cells": [
+        "FIELD_BALANCE",
+        "double",
+        "Текущий баланс абонента"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 15,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0006-t001-r016",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "FIELD_BALANCE_EXPIRE | timestamp | Срок истечения баланса",
+      "cells": [
+        "FIELD_BALANCE_EXPIRE",
+        "timestamp",
+        "Срок истечения баланса"
+      ],
+      "location": {
+        "page": 6,
+        "table": 1,
+        "row": 16,
+        "bbox": [
+          85.344,
+          151.45999999999992,
+          524.6200200000001,
+          380.3300099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0007-text",
+      "source_id": "s001",
+      "kind": "text",
+      "text": "Общие сведения\nАгрегат по устройствам абонентов: ежемесячная сводка по вендорам\nустройств и регионам пользователей.\nБизнес-требования\nНазвание таблицы: TABLE_AGG_DEVICES\nКластер: CLUSTER\nСхема: SCHEMA_CDM_NETS\nСистемы-источники\nIUM — IN-платформа (сбор событий интернет-трафика, звонков и SMS)\nСпособ загрузки\nИнкремент\nРегламент\nЕжемесячно (1 раз в месяц)\nГлубина данных\nС 01.05.2023\nОбязательно загрузить исторические данные.\nКоманда\n PO: USER_A\n TechPM: USER_B\n Аналитик: USER_C\n Разработчик: USER_D\n QA: USER_E\nЗаказчики\nMVNO Unit X\n1. Источники данных\nСхема Таблица Описание\nSCHEMA_RAW TABLE_IUM_RAW_PS Необработанные данные по интернет-\nтрафику (GPRS)\nSCHEMA_RAW TABLE_IUM_RAW_MS Необработанные данные по звонкам и\nSMS\nSCHEMA_ADDS TABLE_BS_REF Справочник базовых станций\nSCHEMA_DIC TABLE_REGION_REF Справочник регионов\nSCHEMA_DIC TABLE_DEVICE_REF Справочник устройств\n2. Структура данных CDM\nТаблица: TABLE_AGG_DEVICES",
+      "location": {
+        "page": 7,
+        "bbox": [
+          0,
+          0,
+          595.32,
+          841.92
+        ]
+      }
+    },
+    {
+      "id": "s001-p0007-t001-r001",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Схема | Таблица | Описание",
+      "cells": [
+        "Схема",
+        "Таблица",
+        "Описание"
+      ],
+      "location": {
+        "page": 7,
+        "table": 1,
+        "row": 1,
+        "bbox": [
+          85.344,
+          600.3100099999999,
+          567.11999,
+          713.8600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0007-t001-r002",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "SCHEMA_RAW | TABLE_IUM_RAW_PS | Необработанные данные по интернет-\nтрафику (GPRS)",
+      "cells": [
+        "SCHEMA_RAW",
+        "TABLE_IUM_RAW_PS",
+        "Необработанные данные по интернет-\nтрафику (GPRS)"
+      ],
+      "location": {
+        "page": 7,
+        "table": 1,
+        "row": 2,
+        "bbox": [
+          85.344,
+          600.3100099999999,
+          567.11999,
+          713.8600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0007-t001-r003",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "SCHEMA_RAW | TABLE_IUM_RAW_MS | Необработанные данные по звонкам и\nSMS",
+      "cells": [
+        "SCHEMA_RAW",
+        "TABLE_IUM_RAW_MS",
+        "Необработанные данные по звонкам и\nSMS"
+      ],
+      "location": {
+        "page": 7,
+        "table": 1,
+        "row": 3,
+        "bbox": [
+          85.344,
+          600.3100099999999,
+          567.11999,
+          713.8600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0007-t001-r004",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "SCHEMA_ADDS | TABLE_BS_REF | Справочник базовых станций",
+      "cells": [
+        "SCHEMA_ADDS",
+        "TABLE_BS_REF",
+        "Справочник базовых станций"
+      ],
+      "location": {
+        "page": 7,
+        "table": 1,
+        "row": 4,
+        "bbox": [
+          85.344,
+          600.3100099999999,
+          567.11999,
+          713.8600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0007-t001-r005",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "SCHEMA_DIC | TABLE_REGION_REF | Справочник регионов",
+      "cells": [
+        "SCHEMA_DIC",
+        "TABLE_REGION_REF",
+        "Справочник регионов"
+      ],
+      "location": {
+        "page": 7,
+        "table": 1,
+        "row": 5,
+        "bbox": [
+          85.344,
+          600.3100099999999,
+          567.11999,
+          713.8600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0007-t001-r006",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "SCHEMA_DIC | TABLE_DEVICE_REF | Справочник устройств",
+      "cells": [
+        "SCHEMA_DIC",
+        "TABLE_DEVICE_REF",
+        "Справочник устройств"
+      ],
+      "location": {
+        "page": 7,
+        "table": 1,
+        "row": 6,
+        "bbox": [
+          85.344,
+          600.3100099999999,
+          567.11999,
+          713.8600099999999
+        ]
+      }
+    },
+    {
+      "id": "s001-p0008-text",
+      "source_id": "s001",
+      "kind": "text",
+      "text": "Номе Поле Тип Описание Комментарий\nр данных\n1 FIELD_REGION_NA string Название Определяется\nME региона как последнее значение region_n\name за месяц для абонента:\nсначала по (lac, cell), затем\nfallback-логика (см. алгоритм).\n2 FIELD_VENDOR_N string Наименован substring(imei, 1, 8) =\nAME ие вендора tac → vendor_name.\nустройства\n3 FIELD_USERS_CNT bigint Уникальное count(distinct FIELD_IMSI)\nколичество\nабонентов\n(IMSI)\n4 FIELD_PROC_TS timesta Дата/время Метка обработки DAG\nmp создания\nагрегата\n5 FIELD_BIZ_DATE date Бизнес-дата Пример: для периода\n(1-е число 01.07.2023–31.07.2023 → 2023-\nмесяца, за 07-01\nкоторый\nформируетс\nя агрегат)\nАлгоритм расчёта\nШаг 1. Выбор пользователей\nБерутся все уникальные FIELD_IMSI из:\n TABLE_IUM_RAW_MS (SMS + звонки)\n TABLE_IUM_RAW_PS (GPRS) за период: FIELD_BIZ_DATE (месяц).\nШаг 2. Определение вендора\nДля каждого FIELD_IMSI берётся FIELD_IMEI (последний по времени за\nмесяц).\nИзвлекается tac = substring(imei, 1, 8).\nПрисоединяется FIELD_VENDOR_NAME по tac из TABLE_DEVICE_REF.\nШаг 3. Определение региона\nДля каждого FIELD_IMSI за месяц:\nНаходится последняя запись с\nненулевыми FIELD_LAC и FIELD_CELL_ID (по FIELD_TIME_STAMP).\nСопоставление с TABLE_BS_REF: приоритет: (lac, cell_id)\n по lac (последняя актуальная запись за месяц)\n по cell_id только для 4G (FIELD_CELL_GEN = 4)",
+      "location": {
+        "page": 8,
+        "bbox": [
+          0,
+          0,
+          595.32,
+          841.92
+        ]
+      }
+    },
+    {
+      "id": "s001-p0008-t001-r001",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Номе\nр | Поле | Тип\nданных | Описание | Комментарий",
+      "cells": [
+        "Номе\nр",
+        "Поле",
+        "Тип\nданных",
+        "Описание",
+        "Комментарий"
+      ],
+      "location": {
+        "page": 8,
+        "table": 1,
+        "row": 1,
+        "bbox": [
+          85.344,
+          56.879999999999995,
+          552.7000200000001,
+          377.33000999999996
+        ]
+      }
+    },
+    {
+      "id": "s001-p0008-t001-r002",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "1 | FIELD_REGION_NA\nME | string | Название\nрегиона | Определяется\nкак последнее значение region_n\name за месяц для абонента:\nсначала по (lac, cell), затем\nfallback-логика (см. алгоритм).",
+      "cells": [
+        "1",
+        "FIELD_REGION_NA\nME",
+        "string",
+        "Название\nрегиона",
+        "Определяется\nкак последнее значение region_n\name за месяц для абонента:\nсначала по (lac, cell), затем\nfallback-логика (см. алгоритм)."
+      ],
+      "location": {
+        "page": 8,
+        "table": 1,
+        "row": 2,
+        "bbox": [
+          85.344,
+          56.879999999999995,
+          552.7000200000001,
+          377.33000999999996
+        ]
+      }
+    },
+    {
+      "id": "s001-p0008-t001-r003",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "2 | FIELD_VENDOR_N\nAME | string | Наименован\nие вендора\nустройства | substring(imei, 1, 8) =\ntac → vendor_name.",
+      "cells": [
+        "2",
+        "FIELD_VENDOR_N\nAME",
+        "string",
+        "Наименован\nие вендора\nустройства",
+        "substring(imei, 1, 8) =\ntac → vendor_name."
+      ],
+      "location": {
+        "page": 8,
+        "table": 1,
+        "row": 3,
+        "bbox": [
+          85.344,
+          56.879999999999995,
+          552.7000200000001,
+          377.33000999999996
+        ]
+      }
+    },
+    {
+      "id": "s001-p0008-t001-r004",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "3 | FIELD_USERS_CNT | bigint | Уникальное\nколичество\nабонентов\n(IMSI) | count(distinct FIELD_IMSI)",
+      "cells": [
+        "3",
+        "FIELD_USERS_CNT",
+        "bigint",
+        "Уникальное\nколичество\nабонентов\n(IMSI)",
+        "count(distinct FIELD_IMSI)"
+      ],
+      "location": {
+        "page": 8,
+        "table": 1,
+        "row": 4,
+        "bbox": [
+          85.344,
+          56.879999999999995,
+          552.7000200000001,
+          377.33000999999996
+        ]
+      }
+    },
+    {
+      "id": "s001-p0008-t001-r005",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "4 | FIELD_PROC_TS | timesta\nmp | Дата/время\nсоздания\nагрегата | Метка обработки DAG",
+      "cells": [
+        "4",
+        "FIELD_PROC_TS",
+        "timesta\nmp",
+        "Дата/время\nсоздания\nагрегата",
+        "Метка обработки DAG"
+      ],
+      "location": {
+        "page": 8,
+        "table": 1,
+        "row": 5,
+        "bbox": [
+          85.344,
+          56.879999999999995,
+          552.7000200000001,
+          377.33000999999996
+        ]
+      }
+    },
+    {
+      "id": "s001-p0008-t001-r006",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "5 | FIELD_BIZ_DATE | date | Бизнес-дата\n(1-е число\nмесяца, за\nкоторый\nформируетс\nя агрегат) | Пример: для периода\n01.07.2023–31.07.2023 → 2023-\n07-01",
+      "cells": [
+        "5",
+        "FIELD_BIZ_DATE",
+        "date",
+        "Бизнес-дата\n(1-е число\nмесяца, за\nкоторый\nформируетс\nя агрегат)",
+        "Пример: для периода\n01.07.2023–31.07.2023 → 2023-\n07-01"
+      ],
+      "location": {
+        "page": 8,
+        "table": 1,
+        "row": 6,
+        "bbox": [
+          85.344,
+          56.879999999999995,
+          552.7000200000001,
+          377.33000999999996
+        ]
+      }
+    },
+    {
+      "id": "s001-p0009-text",
+      "source_id": "s001",
+      "kind": "text",
+      "text": " если lac = 0 → джойн только по cell_id (4G)\n если cell = 0 → джойн только по lac\nУбираются дубли: на выходе — одна region_code на абонента.\nПрисоединение FIELD_REGION_NAME из TABLE_REGION_REF.\nШаг 4. Агрегация\nГруппировка по:\n FIELD_REGION_NAME\n FIELD_VENDOR_NAME\n FIELD_USERS_CNT = count(distinct FIELD_IMSI)\nШаг 5. Запись в CDM\nТребования к агрегату\nТребование Значение\nРегламент расчёта Ежемесячно\nПериод агрегации Календарный месяц\nГлубина данных Исторические данные — с 01.05.2023\nРегиональная агрегация Да (по региону)\nЧасовой пояс UTC\nПоле партиционирования FIELD_BIZ_DATE\nОбновление Только полная перезагрузка месяца\n(без upsert)",
+      "location": {
+        "page": 9,
+        "bbox": [
+          0,
+          0,
+          595.32,
+          841.92
+        ]
+      }
+    },
+    {
+      "id": "s001-p0009-t001-r001",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Требование | Значение",
+      "cells": [
+        "Требование",
+        "Значение"
+      ],
+      "location": {
+        "page": 9,
+        "table": 1,
+        "row": 1,
+        "bbox": [
+          85.344,
+          309.17001,
+          545.8599899999999,
+          457.99001
+        ]
+      }
+    },
+    {
+      "id": "s001-p0009-t001-r002",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Регламент расчёта | Ежемесячно",
+      "cells": [
+        "Регламент расчёта",
+        "Ежемесячно"
+      ],
+      "location": {
+        "page": 9,
+        "table": 1,
+        "row": 2,
+        "bbox": [
+          85.344,
+          309.17001,
+          545.8599899999999,
+          457.99001
+        ]
+      }
+    },
+    {
+      "id": "s001-p0009-t001-r003",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Период агрегации | Календарный месяц",
+      "cells": [
+        "Период агрегации",
+        "Календарный месяц"
+      ],
+      "location": {
+        "page": 9,
+        "table": 1,
+        "row": 3,
+        "bbox": [
+          85.344,
+          309.17001,
+          545.8599899999999,
+          457.99001
+        ]
+      }
+    },
+    {
+      "id": "s001-p0009-t001-r004",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Глубина данных | Исторические данные — с 01.05.2023",
+      "cells": [
+        "Глубина данных",
+        "Исторические данные — с 01.05.2023"
+      ],
+      "location": {
+        "page": 9,
+        "table": 1,
+        "row": 4,
+        "bbox": [
+          85.344,
+          309.17001,
+          545.8599899999999,
+          457.99001
+        ]
+      }
+    },
+    {
+      "id": "s001-p0009-t001-r005",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Региональная агрегация | Да (по региону)",
+      "cells": [
+        "Региональная агрегация",
+        "Да (по региону)"
+      ],
+      "location": {
+        "page": 9,
+        "table": 1,
+        "row": 5,
+        "bbox": [
+          85.344,
+          309.17001,
+          545.8599899999999,
+          457.99001
+        ]
+      }
+    },
+    {
+      "id": "s001-p0009-t001-r006",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Часовой пояс | UTC",
+      "cells": [
+        "Часовой пояс",
+        "UTC"
+      ],
+      "location": {
+        "page": 9,
+        "table": 1,
+        "row": 6,
+        "bbox": [
+          85.344,
+          309.17001,
+          545.8599899999999,
+          457.99001
+        ]
+      }
+    },
+    {
+      "id": "s001-p0009-t001-r007",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Поле партиционирования | FIELD_BIZ_DATE",
+      "cells": [
+        "Поле партиционирования",
+        "FIELD_BIZ_DATE"
+      ],
+      "location": {
+        "page": 9,
+        "table": 1,
+        "row": 7,
+        "bbox": [
+          85.344,
+          309.17001,
+          545.8599899999999,
+          457.99001
+        ]
+      }
+    },
+    {
+      "id": "s001-p0009-t001-r008",
+      "source_id": "s001",
+      "kind": "table_row",
+      "text": "Обновление | Только полная перезагрузка месяца\n(без upsert)",
+      "cells": [
+        "Обновление",
+        "Только полная перезагрузка месяца\n(без upsert)"
+      ],
+      "location": {
+        "page": 9,
+        "table": 1,
+        "row": 8,
+        "bbox": [
+          85.344,
+          309.17001,
+          545.8599899999999,
+          457.99001
+        ]
+      }
+    },
+    {
+      "id": "s002-p0001-text",
+      "source_id": "s002",
+      "kind": "text",
+      "text": "Основные моменты, на которые стоит обращать внимание в аналитической\nдокументации.\nпецификация сериализации — в обязательном порядке указывается модель\nвходного и выходного потока данных (формат, схема, тип\nсериализации/десериализации).\nривязка к источникам — обязательно наличие прямой ссылки на Дата-\nкаталог.\nписание витрин данных — для каждого поля витрины явно указывается\nпризнак обязательности (NOT NULL / NULLABLE).\nиповые фильтры — в документации фиксируются стандартные условия\nфильтрации, применяемые на этапе построения витрин и выгрузки.\nохранение структуры шаблона — все разделы шаблона должны быть\nсохранены. При отсутствии обогащения, фильтрации или иных этапов\nобработки это явно прописывается формулировкой «не применимо.\nнфраструктурные параметры — обязательно указывается кластер Kafka для\nпотоковых источников/приёмников.\nранение данных — для всех файловых хранилищ прописывается полный\nпуть в HDFS с указанием формата.\nормативно-справочная информация — в описание каждой витрины\nвключается перечень используемых справочников.",
+      "location": {
+        "page": 1,
+        "bbox": [
+          0,
+          0,
+          595.32,
+          841.92
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-text",
+      "source_id": "s003",
+      "kind": "text",
+      "text": "Потоковые данные/витрины\nОбщие сведения Краткое описание потока данных\nРешаемая проблема Краткое описание причин создания потока данных и задач, которые предполагается\nрешать с ее помощью\nПродуктовые метрики Список метрик, которые изменятся при реализации/работе потока\nЗаказчики Продукт или подразделение - заказчик\nНефункциональные Например:\nтребования  объем данных\n задержки\nСистемы-источники Перечень и краткое описание источников данных для построения потока\nData Catalog\nСсылка\nИсходники проекта Ссылка на Git Lab\nКоманда Фамилия Имя аналитика - аналитик\nФамилия Имя разработчика - разработчик\nJIRA\nИсточники данных\nОписание Тип Ссылка на источник Сериализация\nисточника источника\nИсточники обогащения данных\nОписание Ссылка Описание\nисточника\nПриемники данных\nОписание данных Кластер Ссылка на Каталог Сериализация\nСхема потоков данных\nАлгоритм обработки потока\nДетальное пошаговое описание алгоритма обработки потоковых данных: фильтрация, трансформация, обогащение.\nШаг 1. Фильтрация данных\nОписание условий фильтрации данных из источника.\nШаг 2. Обогащение данных",
+      "location": {
+        "page": 1,
+        "bbox": [
+          0,
+          0,
+          595.32,
+          841.92
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t001-r001",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Общие сведения",
+      "cells": [
+        "",
+        "Общие сведения",
+        ""
+      ],
+      "location": {
+        "page": 1,
+        "table": 1,
+        "row": 1,
+        "bbox": [
+          36.06139534883721,
+          57.95999999999992,
+          175.73999999999998,
+          240.29999666666666
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t001-r002",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Решаемая проблема | Решаемая проблема",
+      "cells": [
+        "Решаемая проблема",
+        "Решаемая проблема",
+        null
+      ],
+      "location": {
+        "page": 1,
+        "table": 1,
+        "row": 2,
+        "bbox": [
+          36.06139534883721,
+          57.95999999999992,
+          175.73999999999998,
+          240.29999666666666
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t001-r003",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Продуктовые метрики",
+      "cells": [
+        "",
+        "Продуктовые метрики",
+        ""
+      ],
+      "location": {
+        "page": 1,
+        "table": 1,
+        "row": 3,
+        "bbox": [
+          36.06139534883721,
+          57.95999999999992,
+          175.73999999999998,
+          240.29999666666666
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t001-r004",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Заказчики",
+      "cells": [
+        "",
+        "Заказчики",
+        ""
+      ],
+      "location": {
+        "page": 1,
+        "table": 1,
+        "row": 4,
+        "bbox": [
+          36.06139534883721,
+          57.95999999999992,
+          175.73999999999998,
+          240.29999666666666
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t001-r005",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Нефункциональные\nтребования | Нефункциональные",
+      "cells": [
+        "Нефункциональные\nтребования",
+        "Нефункциональные",
+        null
+      ],
+      "location": {
+        "page": 1,
+        "table": 1,
+        "row": 5,
+        "bbox": [
+          36.06139534883721,
+          57.95999999999992,
+          175.73999999999998,
+          240.29999666666666
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t001-r006",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "требования",
+      "cells": [
+        null,
+        "требования",
+        null
+      ],
+      "location": {
+        "page": 1,
+        "table": 1,
+        "row": 6,
+        "bbox": [
+          36.06139534883721,
+          57.95999999999992,
+          175.73999999999998,
+          240.29999666666666
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t001-r007",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Системы-источники",
+      "cells": [
+        "",
+        "Системы-источники",
+        ""
+      ],
+      "location": {
+        "page": 1,
+        "table": 1,
+        "row": 7,
+        "bbox": [
+          36.06139534883721,
+          57.95999999999992,
+          175.73999999999998,
+          240.29999666666666
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t001-r008",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Data Catalog | Data Catalog",
+      "cells": [
+        "Data Catalog",
+        "Data Catalog",
+        null
+      ],
+      "location": {
+        "page": 1,
+        "table": 1,
+        "row": 8,
+        "bbox": [
+          36.06139534883721,
+          57.95999999999992,
+          175.73999999999998,
+          240.29999666666666
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t001-r009",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Исходники проекта",
+      "cells": [
+        "",
+        "Исходники проекта",
+        ""
+      ],
+      "location": {
+        "page": 1,
+        "table": 1,
+        "row": 9,
+        "bbox": [
+          36.06139534883721,
+          57.95999999999992,
+          175.73999999999998,
+          240.29999666666666
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t001-r010",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Команда | Команда",
+      "cells": [
+        "Команда",
+        "Команда",
+        null
+      ],
+      "location": {
+        "page": 1,
+        "table": 1,
+        "row": 10,
+        "bbox": [
+          36.06139534883721,
+          57.95999999999992,
+          175.73999999999998,
+          240.29999666666666
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t001-r011",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "JIRA",
+      "cells": [
+        "",
+        "JIRA",
+        ""
+      ],
+      "location": {
+        "page": 1,
+        "table": 1,
+        "row": 11,
+        "bbox": [
+          36.06139534883721,
+          57.95999999999992,
+          175.73999999999998,
+          240.29999666666666
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t002-r002",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Описание |  |  | Тип |  |  | Ссылка на источник",
+      "cells": [
+        "",
+        "Описание",
+        "",
+        "",
+        "Тип",
+        null,
+        "",
+        "Ссылка на источник",
+        null
+      ],
+      "location": {
+        "page": 1,
+        "table": 2,
+        "row": 2,
+        "bbox": [
+          36.06139534883721,
+          288.1005263157894,
+          556.4157735211268,
+          375.28999999999996
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t002-r003",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "источника |  |  | источника",
+      "cells": [
+        null,
+        "источника",
+        null,
+        null,
+        "источника",
+        null,
+        null,
+        null,
+        null
+      ],
+      "location": {
+        "page": 1,
+        "table": 2,
+        "row": 3,
+        "bbox": [
+          36.06139534883721,
+          288.1005263157894,
+          556.4157735211268,
+          375.28999999999996
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t003-r002",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Описание |  | Ссылка | Описание",
+      "cells": [
+        "",
+        "Описание",
+        "",
+        "Ссылка",
+        "Описание"
+      ],
+      "location": {
+        "page": 1,
+        "table": 3,
+        "row": 2,
+        "bbox": [
+          36.06139534883721,
+          423.1089999999999,
+          556.4157735211268,
+          487.50999999999993
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t003-r003",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "источника",
+      "cells": [
+        null,
+        "источника",
+        null,
+        null,
+        null
+      ],
+      "location": {
+        "page": 1,
+        "table": 3,
+        "row": 3,
+        "bbox": [
+          36.06139534883721,
+          423.1089999999999,
+          556.4157735211268,
+          487.50999999999993
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t004-r002",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Описание данных |  |  | Кластер |  |  | Ссылка на Каталог |  |  | Сериализация",
+      "cells": [
+        "",
+        "Описание данных",
+        "",
+        "",
+        "Кластер",
+        "",
+        "",
+        "Ссылка на Каталог",
+        "",
+        "",
+        "Сериализация"
+      ],
+      "location": {
+        "page": 1,
+        "table": 4,
+        "row": 2,
+        "bbox": [
+          36.06139534883721,
+          535.4499925,
+          556.4157735211268,
+          630.100015
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t005-r001",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Схема потоков данных",
+      "cells": [
+        "Схема потоков данных"
+      ],
+      "location": {
+        "page": 1,
+        "table": 5,
+        "row": 1,
+        "bbox": [
+          36.06139534883721,
+          653.02,
+          556.4157735211268,
+          804.36
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t005-r002",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Алгоритм обработки потока",
+      "cells": [
+        "Алгоритм обработки потока"
+      ],
+      "location": {
+        "page": 1,
+        "table": 5,
+        "row": 2,
+        "bbox": [
+          36.06139534883721,
+          653.02,
+          556.4157735211268,
+          804.36
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t005-r003",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Детальное пошаговое описание алгоритма обработки потоковых данных: фильтрация, трансформация, обогащение.",
+      "cells": [
+        "Детальное пошаговое описание алгоритма обработки потоковых данных: фильтрация, трансформация, обогащение."
+      ],
+      "location": {
+        "page": 1,
+        "table": 5,
+        "row": 3,
+        "bbox": [
+          36.06139534883721,
+          653.02,
+          556.4157735211268,
+          804.36
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t005-r004",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Шаг 1. Фильтрация данных",
+      "cells": [
+        "Шаг 1. Фильтрация данных"
+      ],
+      "location": {
+        "page": 1,
+        "table": 5,
+        "row": 4,
+        "bbox": [
+          36.06139534883721,
+          653.02,
+          556.4157735211268,
+          804.36
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t005-r005",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Описание условий фильтрации данных из источника.",
+      "cells": [
+        "Описание условий фильтрации данных из источника."
+      ],
+      "location": {
+        "page": 1,
+        "table": 5,
+        "row": 5,
+        "bbox": [
+          36.06139534883721,
+          653.02,
+          556.4157735211268,
+          804.36
+        ]
+      }
+    },
+    {
+      "id": "s003-p0001-t005-r006",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Шаг 2. Обогащение данных",
+      "cells": [
+        "Шаг 2. Обогащение данных"
+      ],
+      "location": {
+        "page": 1,
+        "table": 5,
+        "row": 6,
+        "bbox": [
+          36.06139534883721,
+          653.02,
+          556.4157735211268,
+          804.36
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-text",
+      "source_id": "s003",
+      "kind": "text",
+      "text": "Описание алгоритма обогащения данных.\nШаг 3. <Наименование шага 3>\nОписание преобразований, выполняемых на шаге 3.\nФормирование ключа (kafka) / партиции (hdfs)\nСтруктура данных\nПриемники Источники\nАтрибут Тип данных Описание Источник Атрибут Тип данных Комментарий\nатрибута\nПример данных\n10 строк из таблицы вставляем в макрос раскрыть\nDDL\nDDL схема таблицы\nFAQ\nОписание нюансов витрины не очевидных бизнес-пользователям.\nИстория изменений",
+      "location": {
+        "page": 2,
+        "bbox": [
+          0,
+          0,
+          595.32,
+          841.92
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t001-r001",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Описание алгоритма обогащения данных.",
+      "cells": [
+        "Описание алгоритма обогащения данных.",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "location": {
+        "page": 2,
+        "table": 1,
+        "row": 1,
+        "bbox": [
+          35.76705882352941,
+          36.120000000000005,
+          560.5480079999999,
+          271.4899999999999
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t001-r002",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Шаг 3. <Наименование шага 3>",
+      "cells": [
+        "Шаг 3. <Наименование шага 3>",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "location": {
+        "page": 2,
+        "table": 1,
+        "row": 2,
+        "bbox": [
+          35.76705882352941,
+          36.120000000000005,
+          560.5480079999999,
+          271.4899999999999
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t001-r003",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Описание преобразований, выполняемых на шаге 3.",
+      "cells": [
+        "Описание преобразований, выполняемых на шаге 3.",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "location": {
+        "page": 2,
+        "table": 1,
+        "row": 3,
+        "bbox": [
+          35.76705882352941,
+          36.120000000000005,
+          560.5480079999999,
+          271.4899999999999
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t001-r004",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Формирование ключа (kafka) / партиции (hdfs)",
+      "cells": [
+        "Формирование ключа (kafka) / партиции (hdfs)",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "location": {
+        "page": 2,
+        "table": 1,
+        "row": 4,
+        "bbox": [
+          35.76705882352941,
+          36.120000000000005,
+          560.5480079999999,
+          271.4899999999999
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t001-r005",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Структура данных",
+      "cells": [
+        "Структура данных",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "location": {
+        "page": 2,
+        "table": 1,
+        "row": 5,
+        "bbox": [
+          35.76705882352941,
+          36.120000000000005,
+          560.5480079999999,
+          271.4899999999999
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t001-r007",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Приемники |  |  |  |  |  | Источники |  |  |  | Комментарий",
+      "cells": [
+        "",
+        "Приемники",
+        null,
+        null,
+        null,
+        "",
+        "",
+        "Источники",
+        null,
+        null,
+        "",
+        "Комментарий"
+      ],
+      "location": {
+        "page": 2,
+        "table": 1,
+        "row": 7,
+        "bbox": [
+          35.76705882352941,
+          36.120000000000005,
+          560.5480079999999,
+          271.4899999999999
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t001-r010",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Атрибут |  | Тип данных |  | Описание |  | Источник |  | Атрибут | Тип данных",
+      "cells": [
+        "Атрибут",
+        null,
+        "Тип данных",
+        "",
+        "Описание",
+        "",
+        "Источник",
+        null,
+        "Атрибут",
+        "Тип данных",
+        null,
+        null
+      ],
+      "location": {
+        "page": 2,
+        "table": 1,
+        "row": 10,
+        "bbox": [
+          35.76705882352941,
+          36.120000000000005,
+          560.5480079999999,
+          271.4899999999999
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t001-r011",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "атрибута",
+      "cells": [
+        null,
+        null,
+        null,
+        null,
+        "атрибута",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "location": {
+        "page": 2,
+        "table": 1,
+        "row": 11,
+        "bbox": [
+          35.76705882352941,
+          36.120000000000005,
+          560.5480079999999,
+          271.4899999999999
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t002-r002",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Комментарий",
+      "cells": [
+        "Комментарий"
+      ],
+      "location": {
+        "page": 2,
+        "table": 2,
+        "row": 2,
+        "bbox": [
+          489.7,
+          185.99599999999998,
+          552.8199999999999,
+          208.83499999999992
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t003-r001",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Пример данных",
+      "cells": [
+        "Пример данных"
+      ],
+      "location": {
+        "page": 2,
+        "table": 3,
+        "row": 1,
+        "bbox": [
+          35.76705882352941,
+          294.40999999999997,
+          560.5480079999999,
+          464.83
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t003-r002",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "10 строк из таблицы вставляем в макрос раскрыть",
+      "cells": [
+        "10 строк из таблицы вставляем в макрос раскрыть"
+      ],
+      "location": {
+        "page": 2,
+        "table": 3,
+        "row": 2,
+        "bbox": [
+          35.76705882352941,
+          294.40999999999997,
+          560.5480079999999,
+          464.83
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t003-r003",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "DDL",
+      "cells": [
+        "DDL"
+      ],
+      "location": {
+        "page": 2,
+        "table": 3,
+        "row": 3,
+        "bbox": [
+          35.76705882352941,
+          294.40999999999997,
+          560.5480079999999,
+          464.83
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t003-r004",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "DDL схема таблицы",
+      "cells": [
+        "DDL схема таблицы"
+      ],
+      "location": {
+        "page": 2,
+        "table": 3,
+        "row": 4,
+        "bbox": [
+          35.76705882352941,
+          294.40999999999997,
+          560.5480079999999,
+          464.83
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t003-r005",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "FAQ",
+      "cells": [
+        "FAQ"
+      ],
+      "location": {
+        "page": 2,
+        "table": 3,
+        "row": 5,
+        "bbox": [
+          35.76705882352941,
+          294.40999999999997,
+          560.5480079999999,
+          464.83
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t003-r006",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "Описание нюансов витрины не очевидных бизнес-пользователям.",
+      "cells": [
+        "Описание нюансов витрины не очевидных бизнес-пользователям."
+      ],
+      "location": {
+        "page": 2,
+        "table": 3,
+        "row": 6,
+        "bbox": [
+          35.76705882352941,
+          294.40999999999997,
+          560.5480079999999,
+          464.83
+        ]
+      }
+    },
+    {
+      "id": "s003-p0002-t003-r007",
+      "source_id": "s003",
+      "kind": "table_row",
+      "text": "История изменений",
+      "cells": [
+        "История изменений"
+      ],
+      "location": {
+        "page": 2,
+        "table": 3,
+        "row": 7,
+        "bbox": [
+          35.76705882352941,
+          294.40999999999997,
+          560.5480079999999,
+          464.83
+        ]
+      }
+    },
+    {
+      "id": "s004-b0001",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "# MTS: первый клиент",
+      "location": {
+        "line_start": 1,
+        "line_end": 1
+      }
+    },
+    {
+      "id": "s004-b0002",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "Статус: первичный разбор кейса и транскрибации Q&A, 2026-09-03. MTS рассматривается как первый клиент по решению пользователя. Договор, оплаченный пилот и подтверждённая готовность платить материалами не установлены.",
+      "location": {
+        "line_start": 3,
+        "line_end": 3
+      }
+    },
+    {
+      "id": "s004-b0003",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "## Контекст кейса",
+      "location": {
+        "line_start": 5,
+        "line_end": 5
+      }
+    },
+    {
+      "id": "s004-b0004",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "Источник: [постановка кейса](sources/case-brief.txt). Продукт NET поставляет данные из источников радиосети. Аналитики готовят ТЗ на новые потоки и витрины, затем документацию вручную проверяют аналитики и разработчики.",
+      "location": {
+        "line_start": 7,
+        "line_end": 7
+      }
+    },
+    {
+      "id": "s004-b0005",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "Заявленная проблема: часть неоднозначностей обнаруживается уже при разработке или тестировании, что приводит к уточнениям, повторным согласованиям, изменениям реализации и дополнительной проверке. Стоимость описана через трудозатраты участников; численных замеров нет.",
+      "location": {
+        "line_start": 9,
+        "line_end": 9
+      }
+    },
+    {
+      "id": "s004-b0006",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "Основной пользователь по постановке: аналитик. Сценарий: подготовить ТЗ, передать текст на дополнительное ревью, получить замечания, оценить их и при необходимости исправить документ до передачи разработчикам. Агент не принимает итоговое решение о готовности ТЗ.",
+      "location": {
+        "line_start": 11,
+        "line_end": 11
+      }
+    },
+    {
+      "id": "s004-b0007",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "В Q&A кейсодатель подтвердил ориентацию на аналитика и проверку готового документа; по его оценке, новая страница с описанием данных появляется в команде как минимум раз в неделю. Он связывает трудности со сложностью данных и привыканием автора к своему тексту. Покупатель не назван. Подробные [портреты и свидетельства E-01–E-04](user-and-buyer.md) отделяют ответы от наших гипотез; частота ошибок и экономия не измерены.",
+      "location": {
+        "line_start": 13,
+        "line_end": 13
+      }
+    },
+    {
+      "id": "s004-b0008",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "## Конкретизация гипотезы сегмента и проблемы",
+      "location": {
+        "line_start": 15,
+        "line_end": 15
+      }
+    },
+    {
+      "id": "s004-b0009",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "Это клиентское уточнение одной [общей гипотезы версии 2](../knowledge/hypotheses-v2.md#гипотеза-сегмента-и-проблемы), не отдельная подтверждённая гипотеза.",
+      "location": {
+        "line_start": 17,
+        "line_end": 17
+      }
+    },
+    {
+      "id": "s004-b0010",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "Мы верим, что конкретно в команде NET компании MTS сложная структура потоковых данных и большое число полей затрудняют подготовку и ручную проверку ТЗ на потоки и витрины. Часть неполных и неоднозначных требований обнаруживается уже при разработке или тестировании, поэтому команде приходится уточнять документацию, повторно согласовывать требования и корректировать реализацию, что задерживает завершение разработки.",
+      "location": {
+        "line_start": 19,
+        "line_end": 19
+      }
+    },
+    {
+      "id": "s004-b0011",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "Основание: [постановка кейса](sources/case-brief.txt), вводные абзацы о ручном ревью и доработках; [Q&A, строки 49–60](sources/meeting-qa-received-2026-09-03.original.txt), объяснение сложности данных и привыкания к тексту. Формулировка уточнена пользователем в обсуждении [S-17](../knowledge/sources.md). Влияние на сроки не измерено; переносимость на другие команды не подтверждена.",
+      "location": {
+        "line_start": 21,
+        "line_end": 21
+      }
+    },
+    {
+      "id": "s004-b0012",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "**Вопросы:** какие задачи задержались, на сколько и из-за каких недостатков ТЗ? **Подтверждение:** … **Статус:** не проверена.",
+      "location": {
+        "line_start": 23,
+        "line_end": 23
+      }
+    },
+    {
+      "id": "s004-b0013",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "## Ожидаемый результат и границы",
+      "location": {
+        "line_start": 25,
+        "line_end": 25
+      }
+    },
+    {
+      "id": "s004-b0014",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "Результат по постановке: перечень проблемных фрагментов, объяснение причины, информация для уточнения и общий результат проверки. На демонстрации требуется полный сценарий от передачи документа до просмотра результата аналитиком.",
+      "location": {
+        "line_start": 27,
+        "line_end": 27
+      }
+    },
+    {
+      "id": "s004-b0015",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "Критерии кейсодателя качественные: полезные и понятные замечания, привязанные к конкретному ТЗ, которые помогают решить, что доработать. Численный порог не указан. Интеграция с Confluence и аналогичными системами для этого кейса не требуется; это не общее продуктовое ограничение для всех клиентов.",
+      "location": {
+        "line_start": 29,
+        "line_end": 29
+      }
+    },
+    {
+      "id": "s004-b0016",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "## Источники и данные",
+      "location": {
+        "line_start": 31,
+        "line_end": 31
+      }
+    },
+    {
+      "id": "s004-b0017",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "| Материал | Что имеется | Статус |\n| --- | --- | --- |\n| [Постановка](sources/case-brief.txt) | Контекст, задача, ожидаемый сценарий и оценка | Копия исходного вложения без редактирования |\n| [Транскрибация Q&A, S-06](sources/meeting-qa-received-2026-09-03.original.txt) | Ответы о пользователе, текущих инструментах, сценарии и границах кейса | Побайтовая копия, получена 2026-09-03; дата встречи неизвестна, ошибки распознавания сохранены |\n| [Исходный контекст-пак репозитория, S-07](sources/context-pack-mts-7753099.original.md) | Наброски проблемы, три варианта решения и распределение команды | Исходник из коммита `7753099` сохранён без изменений; рабочие предположения, не результаты исследований. Новая редакция размещена в корне |\n| [Тестовые данные](Тестовые%20данные.pdf), стр. 1 | Назначение набора, приоритеты проверки и формат тестирования | Имеется в рабочей папке |\n| Тот же PDF, стр. 2-4 | Описание потока геолокационных данных | Обезличенный пример, не утверждённый шаблон |\n| Тот же PDF, стр. 5-6 | Описание системы-источника и потока CDR | Обезличенный пример |\n| Тот же PDF, стр. 7-9 | Описание ежемесячной витрины-агрегата по устройствам | Доступный пример; уже прочитан при подготовке базы |\n| [Текст PDF](sources/test-data.extracted.md) | Извлечение с номерами страниц | Производный материал; переносы в таблицах могут быть искажены |\n| [Шаблоны документации](Шаблоны%20документации.pdf) | Полная структура шаблона «Потоковые данные/витрины» (общие сведения, метрики, источники, алгоритм по шагам, структура данных, FAQ, история изменений) | Прочитан и использован при разборе гипотезы 3.1; актуальность версии и обязательность конкретных разделов у MTS ещё не подтверждены — файл найден в рабочей папке, а не прислан отдельно как эталон |\n| [Основные моменты документации](Основные%20моменты%20документации.pdf) | 8 обязательных пунктов проверки аналитической документации (спецификация сериализации, привязка к Дата-каталогу, признак NOT NULL/NULLABLE по полям, типовые фильтры, сохранение структуры шаблона с пометкой «не применимо», параметры Kafka, путь в HDFS, перечень справочников) | Прочитан и использован как ответ на вопросы гипотезы 3.1 (обязательные критерии, неформальный чек-лист) и 1.1 (что требует внешнего контекста). Не совпадает с обещанными на встрече примерами редких «дорогостоящих» болевых мест (строки 163–168) — это отдельный, всё ещё не полученный материал |\n| Замечания разработчиков и версии «до/после» | Отдельных материалов нет | Нужно запросить |\n| Новый контрольный документ витрины-агрегата | В PDF заявлено тестирование на новом документе | Отдельный контрольный документ пока не найден |",
+      "location": {
+        "line_start": 33,
+        "line_end": 46
+      }
+    },
+    {
+      "id": "s004-b0018",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "Приоритеты из PDF, стр. 1: расположение источников и Kafka-кластеров; поля и логика расчёта; фильтрация; обновление и объём данных. Там же указана возможность анализа с позиции аналитика, разработчика или тестировщика. Это ракурсы проверки, а не подтверждение необходимости трёх отдельных агентов или трёх пользовательских режимов.",
+      "location": {
+        "line_start": 48,
+        "line_end": 48
+      }
+    },
+    {
+      "id": "s004-b0019",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "## Расхождения и ограничения",
+      "location": {
+        "line_start": 50,
+        "line_end": 50
+      }
+    },
+    {
+      "id": "s004-b0020",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "- Постановка говорит, что примеры будут предоставлены позже; фактически PDF с тремя примерами уже есть. Оба факта сохраняем, состав полного набора ещё нужно уточнить.\n- В примерах повторяется структура разделов, но это не доказывает наличие обязательного шаблона с таким составом.\n- Тестирование на новом документе витрины заявлено на стр. 1. Пример на стр. 7-9 нельзя считать новым независимым тестом после его использования в анализе.\n- Документы объявлены обезличенными. Заглушки полей, имён, кластеров и ссылок не следует автоматически считать дефектом исходной документации.\n- Заявленные требования не являются подтверждённой разметкой ошибок или доказательством эффективности будущего решения.\n- Встреча уточняет требования демонстрации: PDF/текст, отдельные страницы и наглядный результат; эти упрощения не задают условия промышленного внедрения. Вопросы внутреннего контура, ИБ и бюджета остаются открытыми — [E-10, E-11, E-13](user-and-buyer.md#реестр-свидетельств-встречи).",
+      "location": {
+        "line_start": 52,
+        "line_end": 57
+      }
+    },
+    {
+      "id": "s004-b0021",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "## Рабочие материалы",
+      "location": {
+        "line_start": 59,
+        "line_end": 59
+      }
+    },
+    {
+      "id": "s004-b0022",
+      "source_id": "s004",
+      "kind": "text",
+      "text": "- [Контекст-пак, версия 2](../CONTEXT_PACK_MTS.md): производная сводка по всем разделам на основе текущей базы; черновик для обсуждения.\n- [Портреты пользователя и покупателя](user-and-buyer.md): анализ встречи, карта участников и ссылки на строки оригинала.\n- [Первичные наблюдения](document-analysis.md): кандидаты на замечания с привязкой к страницам.\n- [Вопросы кейсодателю](questions.md): процесс, материалы, оценка и условия пилота.\n- [Общие гипотезы](../knowledge/hypotheses-v2.md): продуктовые проверки, для которых этот кейс даёт первые свидетельства.",
+      "location": {
+        "line_start": 61,
+        "line_end": 65
+      }
+    },
+    {
+      "id": "s005-b0001",
+      "source_id": "s005",
+      "kind": "text",
+      "text": "# Первичные наблюдения по примерам",
+      "location": {
+        "line_start": 1,
+        "line_end": 1
+      }
+    },
+    {
+      "id": "s005-b0002",
+      "source_id": "s005",
+      "kind": "text",
+      "text": "Источник: [Тестовые данные.pdf](Тестовые%20данные.pdf), 9 страниц. Дата анализа: 2026-09-03. Прочитаны текст и визуальное представление всех страниц.",
+      "location": {
+        "line_start": 3,
+        "line_end": 3
+      }
+    },
+    {
+      "id": "s005-b0003",
+      "source_id": "s005",
+      "kind": "text",
+      "text": "Статус всех записей: **кандидат на замечание, требуется экспертная проверка**. Это результат чтения примеров, а не реальные комментарии разработчиков и не эталон для оценки модели.",
+      "location": {
+        "line_start": 5,
+        "line_end": 5
+      }
+    },
+    {
+      "id": "s005-b0004",
+      "source_id": "s005",
+      "kind": "text",
+      "text": "## Карта структуры",
+      "location": {
+        "line_start": 7,
+        "line_end": 7
+      }
+    },
+    {
+      "id": "s005-b0005",
+      "source_id": "s005",
+      "kind": "text",
+      "text": "| Пример | Страницы | Представленные разделы |\n| --- | --- | --- |\n| Поток геолокации | 2-4 | Общие сведения, проблема, метрики, нефункциональные требования, источники, схема потока, команда, приёмники, структура полей, дополнительные материалы |\n| Система-источник CDR | 5-6 | Общие сведения, заказчик, источник, команда, источники и приёмники, фильтрация, преобразования, структура полей, FAQ |\n| Витрина-агрегат | 7-9 | Общие сведения, бизнес-требования, источники, способ и регламент загрузки, глубина, команда, структура CDM, алгоритм и требования к агрегату |",
+      "location": {
+        "line_start": 9,
+        "line_end": 13
+      }
+    },
+    {
+      "id": "s005-b0006",
+      "source_id": "s005",
+      "kind": "text",
+      "text": "Из самих примеров, какие разделы обязательны и кто их заполняет, однозначно не установлено. Но структура шаблона теперь известна из отдельного материала — [Шаблоны документации.pdf](Шаблоны%20документации.pdf), а обязательность конкретных элементов — из [Основные моменты документации.pdf](Основные%20моменты%20документации.pdf): все разделы шаблона сохраняются, при отсутствии этапа обработки — явная пометка «не применимо», а не пропуск раздела. Кто именно заполняет каждый раздел (аналитик или разработчик), по-прежнему не установлено.",
+      "location": {
+        "line_start": 15,
+        "line_end": 15
+      }
+    },
+    {
+      "id": "s005-b0007",
+      "source_id": "s005",
+      "kind": "text",
+      "text": "## Кандидаты на замечания",
+      "location": {
+        "line_start": 17,
+        "line_end": 17
+      }
+    },
+    {
+      "id": "s005-b0008",
+      "source_id": "s005",
+      "kind": "text",
+      "text": "| ID | Место и фрагмент | Почему стоит уточнить | Вопрос аналитику |\n| --- | --- | --- | --- |\n| M-01 | Стр. 2: задержка «< 1 мин», стриминг «≈ 0 сек», загрузка по часовым партициям | Не обозначены границы измерения задержки и связь потоковой обработки с партициями; это может быть совместимо, но допускает разные трактовки | Для какого участка и какого показателя задан каждый предел? Когда событие должно стать доступно потребителю? |\n| M-02 | Стр. 5: «Из этих полей удаляются лидирующие нули» | Список полей перед этой фразой отсутствует в предоставленном примере | Какие поля преобразуются? Как обрабатывать строку из нулей, пустое значение и NULL? Не потерян ли список при обезличивании? |\n| M-03 | Стр. 5-6: региональные сдвиги 7 и 3 часа; поля сдвига и временные метки | Не определены исходный часовой пояс, направление применения сдвига и приоритет значения поля над региональным правилом | Из какого времени в какое переводим, к каким полям применяем правило и как связан вычисленный сдвиг с региональным? |\n| M-04 | Стр. 5: фильтрация по времени события относительно времени обработки | Указано окно, но не названо поле события и порядок фильтрации относительно коррекции времени | По какому полю и в какой временной системе сравниваем? Когда выполняется коррекция относительно фильтра? |\n| M-05 | Стр. 6: FAQ использует `radioAccessTechnology`, `CELL_ID`, `LAC`, отсутствующие в приведённой структуре из 15 полей | Неясно, доступны ли они в исходных данных, в другой таблице или FAQ относится к более широкому контексту | Где определены эти поля и требуется ли вычислять технологию связи в рамках данного ТЗ? |\n| M-06 | Стр. 8-9: сначала выбирается запись с ненулевыми LAC и CELL, затем описаны ветви при нулевом LAC или CELL | Порядок выбора записи и fallback может исключать события, для которых предназначены последующие ветви | Применяем резервные правила до фильтрации или после отсутствия полного совпадения? Как обрабатывать отсутствие обоих значений? |\n| M-07 | Стр. 8: последний IMEI за месяц; стр. 9: одна запись региона после удаления дублей | Не заданы правила выбора при равном времени и нескольких подходящих строках справочника | Какой временной столбец определяет последний IMEI? Как разрешать равенства и множественные совпадения справочника? |\n| M-08 | Стр. 7: «Инкремент»; стр. 9: «Только полная перезагрузка месяца (без upsert)» | Возможно, новые месяцы добавляются инкрементально с полной заменой выбранной партиции; смысл не раскрыт | Какие месяцы выбираются для расчёта, как повторно обрабатываются поздние данные и что происходит при повторном запуске? |\n| M-09 | Стр. 9: `FIELD_USERS_CNT = count(distinct FIELD_IMSI)` находится в списке «Группировка по» | Не разделены измерения и агрегатная мера | Верно ли, что ключ группировки состоит только из региона и вендора, а число пользователей вычисляется после группировки? |",
+      "location": {
+        "line_start": 19,
+        "line_end": 29
+      }
+    },
+    {
+      "id": "s005-b0009",
+      "source_id": "s005",
+      "kind": "text",
+      "text": "## Как использовать наблюдения",
+      "location": {
+        "line_start": 31,
+        "line_end": 31
+      }
+    },
+    {
+      "id": "s005-b0010",
+      "source_id": "s005",
+      "kind": "text",
+      "text": "На интервью попросить эксперта оценить полезность каждого кандидата, указать недостающий внешний контекст и отметить артефакты обезличивания. Для подтверждённого замечания сохранить решение, причину и ожидаемое уточнение, не придумывая бизнес-правила за автора.",
+      "location": {
+        "line_start": 33,
+        "line_end": 33
+      }
+    },
+    {
+      "id": "s005-b0011",
+      "source_id": "s005",
+      "kind": "text",
+      "text": "Отдельно проверить достаточность описания расположения источников, расписания, объёмов и расчёта полей по приоритетам стр. 1. Отсутствие конкретных адресов за нейтральными заглушками не является автоматически подтверждённым дефектом.",
+      "location": {
+        "line_start": 35,
+        "line_end": 35
+      }
+    },
+    {
+      "id": "s005-b0012",
+      "source_id": "s005",
+      "kind": "text",
+      "text": "Наблюдения уже основаны на всех трёх примерах: эти документы пригодны для обсуждения и настройки, но не для заявления независимого качества по тем же замечаниям.",
+      "location": {
+        "line_start": 37,
+        "line_end": 37
+      }
+    }
+  ],
+  "diagnostics": []
+}
