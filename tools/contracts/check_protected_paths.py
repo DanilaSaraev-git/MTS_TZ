@@ -19,6 +19,10 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--baseline", default="471316ea08f1cf55116e2e4bc86d626454fbf632")
     parser.add_argument("--json", action="store_true")
+    parser.add_argument(
+        "--allow-path", action="append", default=[],
+        help="Explicitly approved repository-relative file; exact match, no directory/glob expansion.",
+    )
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     result = subprocess.run(
@@ -29,9 +33,16 @@ def main() -> int:
         text=True,
     )
     changed = [line for line in result.stdout.splitlines() if line]
-    payload = {"changed": changed, "status": "ok" if not changed else "failed"}
+    allowed = set(args.allow_path)
+    unexpected = [path for path in changed if path not in allowed]
+    payload = {
+        "changed": changed,
+        "allowed_changes": [path for path in changed if path in allowed],
+        "unexpected_changes": unexpected,
+        "status": "ok" if not unexpected else "failed",
+    }
     print(json.dumps(payload, sort_keys=True) if args.json else payload["status"])
-    return 0 if not changed else 1
+    return 0 if not unexpected else 1
 
 
 if __name__ == "__main__":

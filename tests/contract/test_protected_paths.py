@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -16,6 +18,7 @@ def test_protected_paths_unchanged_from_docs_commit() -> None:
             "--baseline",
             "471316ea08f1cf55116e2e4bc86d626454fbf632",
             "--json",
+            *shlex.split(os.environ.get("PROTECTED_PATH_ARGS", "")),
         ],
         cwd=ROOT,
         check=True,
@@ -23,4 +26,5 @@ def test_protected_paths_unchanged_from_docs_commit() -> None:
         text=True,
     )
     payload = json.loads(result.stdout)
-    assert payload == {"changed": [], "status": "ok"}
+    assert payload["status"] == "ok"
+    assert payload["unexpected_changes"] == []
