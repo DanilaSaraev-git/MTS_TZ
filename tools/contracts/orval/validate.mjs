@@ -5,6 +5,8 @@ import SwaggerParser from "@apidevtools/swagger-parser";
 import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import YAML from "yaml";
+import { execFileSync } from "node:child_process";
+import { assertCompatible } from "./compatibility.mjs";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const contractRoot = path.join(root, "contracts/review-platform/v1");
@@ -18,14 +20,21 @@ if (parsedDocument.errors.length) {
 }
 const openapi = parsedDocument.toJS();
 await SwaggerParser.validate(openapiPath);
+const baselineDocument = YAML.parseDocument(
+  execFileSync("git", ["show", "review-platform-contract-v1.0.1:contracts/review-platform/v1/openapi.yaml"], { cwd: root, encoding: "utf8" }),
+  { uniqueKeys: true },
+);
+if (baselineDocument.errors.length) throw new Error("v1.0.1 baseline YAML is invalid");
+assertCompatible(baselineDocument.toJS(), openapi);
 
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 addFormats(ajv);
 
-const readJson = (file) => JSON.parse(fs.readFileSync(file, "utf8"), (key, value, context) => {
-  if (context?.source === undefined) return value;
-  return value;
-});
+const readJson = (file) => {
+  const document = YAML.parseDocument(fs.readFileSync(file, "utf8"), { uniqueKeys: true });
+  if (document.errors.length) throw new Error(`${file}: ${document.errors.map((error) => error.message).join("; ")}`);
+  return document.toJS();
+};
 
 const validate = (schema, value, label) => {
   const validator = ajv.compile(schema);
@@ -52,8 +61,8 @@ for (const [exampleName, schemaName] of Object.entries(skillExamples)) {
 const httpExamples = {
   "bootstrap.json": "Bootstrap",
   "document.json": "Document",
-  "profiles.json": null,
-  "model-profiles.json": null,
+  "profiles.json": { items: "ReviewProfile" },
+  "model-profiles.json": { items: "ModelProfile" },
   "create-review-run.json": "CreateReviewRun",
   "review-run.queued.json": "ReviewRun",
   "review-run.completed.json": "ReviewRun",
@@ -72,12 +81,15 @@ const httpExamples = {
 };
 for (const [exampleName, componentName] of Object.entries(httpExamples)) {
   const value = readJson(path.join(contractRoot, "examples/http", exampleName));
-  if (!componentName) continue;
-  validate({
-    $schema: "https://json-schema.org/draft/2020-12/schema",
-    $ref: `#/components/schemas/${componentName}`,
-    components: openapi.components,
-  }, value, exampleName);
+  const rootSchema = typeof componentName === "string"
+    ? { $ref: `#/components/schemas/${componentName}` }
+    : {
+        type: "object",
+        additionalProperties: false,
+        required: ["items"],
+        properties: { items: { type: "array", items: { $ref: `#/components/schemas/${componentName.items}` } } },
+      };
+  validate({ $schema: "https://json-schema.org/draft/2020-12/schema", ...rootSchema, components: openapi.components }, value, exampleName);
 }
 
 for (const schemaName of [

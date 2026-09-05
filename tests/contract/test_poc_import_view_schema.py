@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from contract_helpers import load_json_no_duplicates
+from tests.contract.contract_helpers import load_json_no_duplicates
 
 
 def test_poc_contract_is_typed_view_not_public_http_api() -> None:

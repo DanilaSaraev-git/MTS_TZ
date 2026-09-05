@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from contract_helpers import load_json_no_duplicates, validate_schema
+from tests.contract.contract_helpers import load_json_no_duplicates, validate_schema
 
 
 ROOT = Path(__file__).parents[2]

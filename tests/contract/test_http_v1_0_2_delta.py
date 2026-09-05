@@ -35,7 +35,11 @@ def test_semantics_are_documented_without_new_public_enum() -> None:
     assert "semantic_analysis_not_performed" in text
     assert "quoted lowercase SHA-256" in text
     assert "immutable family" in text
+    assert "deployment-scoped release data" in text
     assert "awaiting or undergoing extraction" in text
+    assert "Requested source" in text
+    assert "degraded, unknown, missing, or expired" in text
+    assert "YYYY-MM-DDTHH:mm:ss.ffffffZ" in text
     assert "primary_source_partial" not in re.findall(
         r"code:\s*\{enum:\s*\[([^]]+)\]", text
     )[0]
