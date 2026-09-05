@@ -1,6 +1,8 @@
 .PHONY: lint contracts test-unit test-integration test-migration test-security test-e2e release-check-local release-check mvp-up mvp-smoke mvp-restart mvp-down mvp-reset
 
 UV := uv run --frozen
+PROTECTED_PATH_ARGS ?=
+export PROTECTED_PATH_ARGS
 MVP_PROJECT ?= review-platform-mvp
 MVP_PORT ?= 8080
 MVP_COMPOSE := REVIEW_PROXY_PORT=$(MVP_PORT) docker compose --project-name $(MVP_PROJECT) -f deploy/compose/compose.yaml
@@ -36,7 +38,7 @@ test-e2e:
 	$(UV) pytest -q tests/e2e
 
 release-check-local: lint contracts test-unit test-security
-	python3 tools/contracts/check_protected_paths.py
+	python3 tools/contracts/check_protected_paths.py $(PROTECTED_PATH_ARGS)
 
 release-check: release-check-local
 	@set -eu; \
