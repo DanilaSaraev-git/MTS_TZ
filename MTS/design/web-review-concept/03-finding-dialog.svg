@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PROTOTYPE — static adaptive dialogue for one selected finding. -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">AI Review — диалог по замечанию F-003</title>
+  <desc id="desc">Документ и подсветка остаются слева, а справа агент задаёт уточняющие вопросы по одному выбранному замечанию.</desc>
+  <defs>
+    <style>
+      .ui { font-family: Arial, "Segoe UI", sans-serif; fill: #1D2125; }
+      .muted { fill: #44546F; }
+      .subtle { fill: #626F86; }
+      .label { font-size: 12px; font-weight: 700; letter-spacing: .15px; }
+      .meta { font-size: 12px; }
+      .body { font-size: 14px; }
+      .body-strong { font-size: 14px; font-weight: 700; }
+      .section { font-size: 16px; font-weight: 700; }
+      .tiny { font-size: 11px; }
+      .icon { fill: none; stroke: #44546F; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+    <filter id="panelShadow" x="-10%" y="-5%" width="120%" height="110%">
+      <feDropShadow dx="-4" dy="0" stdDeviation="6" flood-color="#091E42" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Preserve the review workspace and selected document anchor. -->
+  <image x="0" y="0" width="1440" height="900" xlink:href="02-review-results.svg"/>
+
+  <!-- Dialogue replaces only the contextual panel. -->
+  <rect x="1000" y="56" width="440" height="844" fill="#FFFFFF" filter="url(#panelShadow)"/>
+  <line x1="1000.5" y1="56" x2="1000.5" y2="900" stroke="#C7CCD4"/>
+
+  <!-- Dialogue header -->
+  <rect x="1016" y="70" width="32" height="32" rx="4" fill="#F1F2F4"/>
+  <path d="M1036 79l-8 7 8 7M1028 86h12" class="icon"/>
+  <text x="1058" y="81" class="ui section">Диалог по замечанию</text>
+  <text x="1058" y="103" class="ui meta subtle">F-003 · вопрос 2 · 1 ответ</text>
+  <circle cx="1408" cy="84" r="14" fill="#F1F2F4"/>
+  <text x="1408" y="88" text-anchor="middle" class="ui body-strong muted">···</text>
+
+  <!-- Finding context -->
+  <rect x="1016" y="118" width="408" height="94" rx="5" fill="#FFF7F7" stroke="#F3B7BB"/>
+  <rect x="1016" y="118" width="4" height="94" rx="2" fill="#E30611"/>
+  <rect x="1032" y="132" width="76" height="22" rx="11" fill="#FFE4E6"/>
+  <circle cx="1045" cy="143" r="4.5" fill="#AE2E24"/>
+  <text x="1055" y="147" class="ui tiny" font-weight="700" fill="#AE2E24">ВЫСОКИЙ</text>
+  <text x="1396" y="147" text-anchor="end" class="ui tiny subtle">стр. 5–6</text>
+  <text x="1032" y="176" class="ui body-strong">Не определена семантика часового сдвига</text>
+  <path d="M1034 188h12v12h-12zM1038 185h7l2 3h-11z" class="icon"/>
+  <text x="1053" y="198" class="ui tiny" fill="#B80D18">Показать исходный фрагмент</text>
+
+  <!-- Conversation -->
+  <rect x="1001" y="225" width="439" height="535" fill="#FAFBFC"/>
+  <line x1="1000" y1="224.5" x2="1440" y2="224.5" stroke="#DCDFE4"/>
+
+  <circle cx="1032" cy="252" r="16" fill="#FFF0F1"/>
+  <rect x="1025" y="245" width="14" height="14" rx="3" fill="#E30611"/>
+  <circle cx="1029" cy="252" r="1.5" fill="#FFFFFF"/>
+  <circle cx="1035" cy="252" r="1.5" fill="#FFFFFF"/>
+  <text x="1058" y="247" class="ui label">AI-АГЕНТ</text>
+  <text x="1398" y="247" text-anchor="end" class="ui tiny subtle">15:18</text>
+  <rect x="1058" y="258" width="350" height="105" rx="6" fill="#FFFFFF" stroke="#DCDFE4"/>
+  <text x="1074" y="281" class="ui meta">Из какого времени в какое выполняется перевод,</text>
+  <text x="1074" y="300" class="ui meta">к каким полям он применяется и как соотносятся</text>
+  <text x="1074" y="319" class="ui meta">FIELD_TIME_ZONE_SHIFT и</text>
+  <text x="1074" y="338" class="ui meta">FIELD_TIMEZONE_CALC?</text>
+
+  <!-- Suggested answers -->
+  <text x="1058" y="387" class="ui tiny subtle">ВАРИАНТЫ · ОТВЕЧЕНО</text>
+  <g opacity="0.55">
+  <rect x="1058" y="398" width="169" height="34" rx="4" fill="#FFFFFF" stroke="#B7BEC8"/>
+  <circle cx="1074" cy="415" r="6" fill="#FFFFFF" stroke="#8590A2"/>
+  <text x="1087" y="419" class="ui tiny">UTC → время региона</text>
+  <rect x="1235" y="398" width="173" height="34" rx="4" fill="#FFFFFF" stroke="#B7BEC8"/>
+  <circle cx="1251" cy="415" r="6" fill="#FFFFFF" stroke="#8590A2"/>
+  <text x="1264" y="419" class="ui tiny">Время региона → UTC</text>
+  <rect x="1058" y="440" width="169" height="34" rx="4" fill="#FFFFFF" stroke="#B7BEC8"/>
+  <circle cx="1074" cy="457" r="6" fill="#FFFFFF" stroke="#8590A2"/>
+  <text x="1087" y="461" class="ui tiny">Зависит от поля</text>
+  <rect x="1235" y="440" width="173" height="34" rx="4" fill="#FFFFFF" stroke="#B7BEC8"/>
+  <circle cx="1251" cy="457" r="6" fill="#FFFFFF" stroke="#8590A2"/>
+  <text x="1264" y="461" class="ui tiny">Свой вариант</text>
+  </g>
+
+  <!-- Analyst answer -->
+  <text x="1356" y="501" text-anchor="end" class="ui tiny" font-weight="700">ВЫ · АНАЛИТИК</text>
+  <text x="1408" y="501" text-anchor="end" class="ui tiny subtle">15:19</text>
+  <rect x="1088" y="512" width="320" height="66" rx="6" fill="#FFF0F1" stroke="#F3B7BB"/>
+  <text x="1104" y="535" class="ui meta">События приходят в UTC. Для витрины переводим</text>
+  <text x="1104" y="554" class="ui meta">их в локальное время региона.</text>
+
+  <!-- Adaptive follow-up -->
+  <circle cx="1032" cy="614" r="16" fill="#FFF0F1"/>
+  <rect x="1025" y="607" width="14" height="14" rx="3" fill="#E30611"/>
+  <circle cx="1029" cy="614" r="1.5" fill="#FFFFFF"/>
+  <circle cx="1035" cy="614" r="1.5" fill="#FFFFFF"/>
+  <text x="1058" y="609" class="ui label">AI-АГЕНТ</text>
+  <text x="1398" y="609" text-anchor="end" class="ui tiny subtle">15:19</text>
+  <rect x="1058" y="620" width="350" height="82" rx="6" fill="#FFFFFF" stroke="#DCDFE4"/>
+  <text x="1074" y="644" class="ui meta">Что имеет приоритет при расчёте локального</text>
+  <text x="1074" y="663" class="ui meta">времени: правило региона или значение</text>
+  <text x="1074" y="682" class="ui meta">FIELD_TIME_ZONE_SHIFT?</text>
+
+  <rect x="1058" y="716" width="155" height="30" rx="4" fill="#FFFFFF" stroke="#B7BEC8"/>
+  <text x="1135.5" y="736" text-anchor="middle" class="ui tiny muted">Отложить вопрос</text>
+  <rect x="1221" y="716" width="187" height="30" rx="4" fill="#FFFFFF" stroke="#B7BEC8"/>
+  <text x="1314.5" y="736" text-anchor="middle" class="ui tiny muted">Обсудить с командой</text>
+
+  <!-- Composer -->
+  <rect x="1001" y="760" width="439" height="140" fill="#FFFFFF"/>
+  <line x1="1000" y1="760.5" x2="1440" y2="760.5" stroke="#DCDFE4"/>
+  <rect x="1016" y="776" width="408" height="62" rx="5" fill="#FFFFFF" stroke="#8590A2"/>
+  <text x="1032" y="801" class="ui meta subtle">Напишите ответ или добавьте важное условие…</text>
+  <path d="M1033 821l6-6 6 6M1039 815v13" class="icon"/>
+  <text x="1053" y="827" class="ui tiny subtle">Прикрепить фрагмент</text>
+  <text x="1016" y="871" class="ui tiny subtle">Ответ сохранится в истории замечания</text>
+  <rect x="1311" y="850" width="113" height="36" rx="4" fill="#E30611"/>
+  <text x="1367.5" y="873" text-anchor="middle" class="ui body-strong" fill="#FFFFFF">Отправить</text>
+</svg>
