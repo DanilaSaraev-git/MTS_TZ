@@ -628,6 +628,9 @@ components:
     ReviewProfile:
       type: object
       additionalProperties: false
+      description: >-
+        Immutable family version. A system-scoped profile is deployment-scoped release data,
+        visible to the configured workspace but neither workspace-owned nor mutable by clients.
       required: [id, workspace_id, scope, version, digest, name, role, goal, checks, supersedes, created_at]
       properties:
         id:
@@ -637,8 +640,7 @@ components:
         workspace_id: {type: [string, "null"], format: uuid}
         scope: {enum: [system, workspace]}
         version:
-          allOf:
-            - $ref: "#/components/schemas/SemVer"
+          $ref: "#/components/schemas/SemVer"
           description: Server-generated immutable semantic version; the mutable family-head pointer is stored separately
         digest: {type: string, pattern: "^[a-f0-9]{64}$"}
         name: {type: string, minLength: 1, maxLength: 255}
@@ -676,7 +678,11 @@ components:
           type: array
           uniqueItems: true
           items: {enum: [text_generation, vision, native_structured_output]}
-        availability: {enum: [available, unavailable]}
+        availability:
+          enum: [available, unavailable]
+          description: >-
+            Only a fresh internal available observation projects to available. Internal
+            unavailable, degraded, unknown, missing, or expired observations project to unavailable.
 
     ModelProfileRef:
       type: object
@@ -729,6 +735,10 @@ components:
     ExecutionSnapshot:
       type: object
       additionalProperties: false
+      description: >-
+        Immutable exact configuration selected when the run is created. Requested source
+        identity, order, and role are snapshotted before enqueue; terminal prepared-source
+        statuses, fragment IDs, and diagnostics are appended once after extraction.
       required: [profile, skill, model_profile, dialogue_policy, engine_version]
       properties:
         profile:
@@ -744,6 +754,9 @@ components:
     CreateReviewRun:
       type: object
       additionalProperties: false
+      description: >-
+        Selects immutable requested sources and exact configuration versions. Upload does not
+        imply extraction; preparation fixes terminal source outcomes before semantic review.
       required: [document_id, context_document_ids, profile, model_profile, locale]
       properties:
         document_id: {type: string, format: uuid}
@@ -846,7 +859,10 @@ components:
       properties:
         id: {type: string, format: uuid}
         run_id: {type: string, format: uuid}
-        created_at: {type: string, format: date-time}
+        created_at:
+          type: string
+          format: date-time
+          description: Canonical UTC timestamp YYYY-MM-DDTHH:mm:ss.ffffffZ with exactly six fractional digits
         summary: {type: string, minLength: 1, maxLength: 5000}
         coverage:
           $ref: "#/components/schemas/Coverage"

@@ -8,6 +8,8 @@
 
 Patch v1.0.2 не меняет URL или payload shape: он добавляет недостающие negative responses, уточняет immutable profile/extraction semantics и strong ETag, а Swagger assets теперь поставляются локально для offline deployment. Частично извлечённый primary использует существующий `source_partial` с `reason=primary_source_partial`; это не новый public enum.
 
+System profile является deployment-scoped release data, а не workspace-owned mutable version. Create-run сначала фиксирует requested source identity/order/role, затем preparation append-once сохраняет terminal extraction outcome. Только свежая внутренняя доступность модели `available` отображается как public `available`; degraded/unknown/missing/expired становятся `unavailable`. Timestamp опубликованного отчёта канонизируется как `YYYY-MM-DDTHH:mm:ss.ffffffZ`.
+
 Основной frontend-flow:
 
 1. `GET /v1/bootstrap` — получить настроенного actor, workspace и публичные лимиты.

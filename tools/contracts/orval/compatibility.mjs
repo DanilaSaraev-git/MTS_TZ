@@ -1,0 +1,77 @@
+import fs from "node:fs";
+import path from "node:path";
+import process from "node:process";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import YAML from "yaml";
+
+const parseUnique = (source, label) => {
+  const document = YAML.parseDocument(source, { uniqueKeys: true });
+  if (document.errors.length) throw new Error(`${label}: ${document.errors.map((error) => error.message).join("; ")}`);
+  return document.toJS();
+};
+
+const stripDocumentation = (value) => {
+  if (Array.isArray(value)) return value.map(stripDocumentation);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value)
+      .filter(([key]) => !["description", "summary", "externalDocs"].includes(key))
+      .map(([key, child]) => [key, stripDocumentation(child)]));
+  }
+  return value;
+};
+
+const equal = (left, right) => JSON.stringify(stripDocumentation(left)) === JSON.stringify(stripDocumentation(right));
+const methods = new Set(["get", "post", "put", "patch", "delete", "options", "head", "trace"]);
+const allowedResponses = new Map([
+  ["/v1/workspaces/{workspaceId}/documents|get", new Set(["400"])],
+  ["/v1/workspaces/{workspaceId}/documents|post", new Set(["404"])],
+  ["/v1/workspaces/{workspaceId}/profiles|post", new Set(["409"])],
+  ["/v1/workspaces/{workspaceId}/review-runs|get", new Set(["400"])],
+]);
+
+export function assertCompatible(baseline, candidate) {
+  if (candidate.info?.version !== "1.0.2") throw new Error("candidate info.version is not 1.0.2");
+  if (JSON.stringify(Object.keys(candidate.paths).sort()) !== JSON.stringify(Object.keys(baseline.paths).sort())) {
+    throw new Error("path set changed");
+  }
+  for (const [route, baselinePath] of Object.entries(baseline.paths)) {
+    const candidatePath = candidate.paths[route];
+    if (!equal(baselinePath.parameters, candidatePath.parameters)) throw new Error(`${route}: path parameters changed`);
+    const baselineMethods = Object.keys(baselinePath).filter((key) => methods.has(key)).sort();
+    const candidateMethods = Object.keys(candidatePath).filter((key) => methods.has(key)).sort();
+    if (JSON.stringify(baselineMethods) !== JSON.stringify(candidateMethods)) throw new Error(`${route}: operations changed`);
+    for (const method of baselineMethods) {
+      const before = baselinePath[method];
+      const after = candidatePath[method];
+      for (const key of ["operationId", "parameters", "requestBody", "security", "tags"]) {
+        if (!equal(before[key], after[key])) throw new Error(`${method.toUpperCase()} ${route}: ${key} changed`);
+      }
+      for (const [status, response] of Object.entries(before.responses)) {
+        if (!(status in after.responses) || !equal(response, after.responses[status])) {
+          throw new Error(`${method.toUpperCase()} ${route}: response ${status} changed or removed`);
+        }
+      }
+      const added = Object.keys(after.responses).filter((status) => !(status in before.responses));
+      const allowed = allowedResponses.get(`${route}|${method}`) ?? new Set();
+      if (added.some((status) => !allowed.has(status)) || added.length !== allowed.size) {
+        throw new Error(`${method.toUpperCase()} ${route}: unexpected response delta ${added.join(",")}`);
+      }
+    }
+  }
+  for (const section of ["schemas", "parameters", "responses"]) {
+    if (!equal(baseline.components?.[section], candidate.components?.[section])) {
+      throw new Error(`components.${section} has a breaking shape change`);
+    }
+  }
+}
+
+if (fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+  const root = path.resolve(import.meta.dirname, "../../..");
+  const baselineSource = process.argv[2]
+    ? fs.readFileSync(process.argv[2], "utf8")
+    : execFileSync("git", ["show", "review-platform-contract-v1.0.1:contracts/review-platform/v1/openapi.yaml"], { cwd: root, encoding: "utf8" });
+  const candidatePath = process.argv[3] ?? path.join(root, "contracts/review-platform/v1/openapi.yaml");
+  assertCompatible(parseUnique(baselineSource, "baseline"), parseUnique(fs.readFileSync(candidatePath, "utf8"), "candidate"));
+  console.log("v1.0.2 is an exact additive OpenAPI delta: ok");
+}

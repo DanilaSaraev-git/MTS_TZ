@@ -66,3 +66,17 @@ def validate_runtime_config(schema: dict[str, Any], value: Any) -> None:
             raise ValueError("enabled optional endpoint must be absolute HTTP(S)")
         if parsed.username or parsed.password or parsed.query or parsed.fragment:
             raise ValueError("optional endpoint must not contain userinfo, query, or fragment")
+    bindings = value["deterministic_gateway"]["trusted_fixture_bindings"]
+    binding_ids = [binding["binding_id"] for binding in bindings]
+    if len(binding_ids) != len(set(binding_ids)):
+        raise ValueError("trusted fixture binding_id values must be unique")
+    selector_keys = (
+        "primary_document_sha256",
+        "review_profile_semantic_digest",
+        "skill_package_sha256",
+        "parser_settings_digest",
+        "engine_version",
+    )
+    selectors = [tuple(binding[key] for key in selector_keys) for binding in bindings]
+    if len(selectors) != len(set(selectors)):
+        raise ValueError("trusted fixture selector tuples must be unique")
