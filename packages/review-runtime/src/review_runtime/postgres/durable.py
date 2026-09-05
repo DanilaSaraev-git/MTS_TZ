@@ -1,3 +1,5 @@
+"""Deferred JSON-snapshot prototype; never used by the default MVP composition."""
+
 from __future__ import annotations
 
 from collections.abc import Callable

@@ -10,29 +10,85 @@ from review_core.review.validation import validate_report
 
 from review_runtime.config.settings import TrustedFixtureBinding
 from review_runtime.config.trusted_fixtures import TrustedFixtureRegistry
+from review_runtime.config.verify import verify
 from review_runtime.documents.pdf import PdfDocumentParser
 from review_runtime.documents.text import TextDocumentParser
 from review_runtime.models.deterministic import DeterministicModelGateway
 
 
 class TrustedFixtureReviewExecutor:
-    def __init__(self, root: Path) -> None:
+    def __init__(
+        self,
+        root: Path,
+        *,
+        runtime_config_path: Path | None = None,
+        expected_output_path: Path | None = None,
+    ) -> None:
         self.root = root
         self.parser = TextDocumentParser()
         trusted = root / "tests/fixtures/synthetic-review/synthetic-spec.md"
         self.trusted_document_sha256 = hashlib.sha256(trusted.read_bytes()).hexdigest()
-        resource = root / "tests/fixtures/synthetic-review/trusted-fixture-expected-output.v1.json"
-        self.resource_sha256 = hashlib.sha256(resource.read_bytes()).hexdigest()
-        self.gateway = DeterministicModelGateway.from_manifest(
-            root / "tests/fixtures/synthetic-review/trusted-manifest.v1.json"
+        self.runtime_config_path = runtime_config_path
+        self.expected_output_path = expected_output_path or (
+            root / "tests/fixtures/synthetic-review/trusted-fixture-expected-output.v1.json"
         )
-        manifest_binding = self.gateway.bindings[0]
-        self.registry = TrustedFixtureRegistry(
+        self.schema_path = (
             root
-            / "specs/003-backend-implementation/contracts/trusted-fixture-expected-output.v1.schema.json",
-            {"synthetic-review-v1": resource},
+            / "specs/003-backend-implementation/contracts/trusted-fixture-expected-output.v1.schema.json"
         )
-        self.template = self.registry.resolve(TrustedFixtureBinding.model_validate(manifest_binding)).value
+        self.gateway, self.templates = self._load_configuration()
+
+    def _load_configuration(
+        self,
+    ) -> tuple[DeterministicModelGateway, dict[str, dict[str, Any]]]:
+        if self.runtime_config_path is None:
+            gateway = DeterministicModelGateway.from_manifest(
+                self.root / "tests/fixtures/synthetic-review/trusted-manifest.v1.json"
+            )
+            bindings = [TrustedFixtureBinding.model_validate(value) for value in gateway.bindings]
+        else:
+            policy = verify(self.runtime_config_path)
+            bindings = policy.deterministic_gateway.trusted_fixture_bindings
+            if not bindings:
+                raise ValueError("runtime config has no trusted fixture bindings")
+            gateway = DeterministicModelGateway.from_bindings(
+                [binding.model_dump() for binding in bindings]
+            )
+        registry = TrustedFixtureRegistry(
+            self.schema_path,
+            {
+                binding.expected_output_resource_id: self.expected_output_path
+                for binding in bindings
+            },
+        )
+        templates = {
+            binding.expected_output_resource_id: registry.resolve(binding).value
+            for binding in bindings
+        }
+        return gateway, templates
+
+    def check_configuration(self) -> bool:
+        self._load_configuration()
+        return True
+
+    def check_release_configuration(
+        self,
+        *,
+        review_profile_semantic_digest: str,
+        skill_package_sha256: str,
+        engine_version: str,
+    ) -> bool:
+        gateway, _ = self._load_configuration()
+        binding = gateway.match(
+            primary_document_sha256=self.trusted_document_sha256,
+            review_profile_semantic_digest=review_profile_semantic_digest,
+            skill_package_sha256=skill_package_sha256,
+            parser_settings_digest=self.parser.settings_digest,
+            engine_version=engine_version,
+        )
+        if binding is None:
+            raise ValueError("runtime config does not bind the release trusted fixture")
+        return True
 
     def execute(
         self,
@@ -44,6 +100,7 @@ class TrustedFixtureReviewExecutor:
         snapshot: dict[str, Any],
         created_at: str,
     ) -> dict[str, Any]:
+        self.gateway, self.templates = self._load_configuration()
         parser = PdfDocumentParser() if document.media_type == "application/pdf" else self.parser
         primary = parser.parse(document.content, source_id="source-main", document_id=document.id)
         document.fragments = primary
@@ -86,7 +143,11 @@ class TrustedFixtureReviewExecutor:
         trusted = binding is not None
         findings: list[dict[str, Any]] = []
         if trusted:
-            template = self.template["findings"][0]
+            assert binding is not None
+            expected_output_resource_id = binding["expected_output_resource_id"]
+            expected_output_sha256 = binding["expected_output_sha256"]
+            trusted_template = self.templates[expected_output_resource_id]
+            template = trusted_template["findings"][0]
             anchor_template = template["anchors"][0]
             fragment = primary[anchor_template["primary_fragment_ordinal"] - 1]
             quote = anchor_template["quote"]
@@ -128,9 +189,10 @@ class TrustedFixtureReviewExecutor:
                 "reviewed_fragment_ids": target,
                 "gaps": [],
             }
-            summary = self.template["summary"]
-            limitations = self.template["limitations"]
+            summary = trusted_template["summary"]
+            limitations = trusted_template["limitations"]
         else:
+            expected_output_sha256 = None
             coverage = {
                 "status": "partial",
                 "target_fragment_ids": target,
@@ -162,8 +224,8 @@ class TrustedFixtureReviewExecutor:
                     "model": "trusted-fixture-or-gap",
                     "model_version": "1.0.0",
                     "safe_parameters": {
-                        "binding_id": "synthetic-v1" if trusted else "unbound",
-                        "expected_output_sha256": self.resource_sha256 if trusted else None,
+                        "binding_id": binding["binding_id"] if binding is not None else "unbound",
+                        "expected_output_sha256": expected_output_sha256,
                     },
                     "usage": {"input_tokens": 0, "output_tokens": 0},
                 },

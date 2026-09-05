@@ -175,6 +175,8 @@ class OperatorSettings(BaseSettings):
     database_url: str
     queue_database_url: str
     runtime_config_path: Path
+    expected_output_path: Path
+    report_contract_path: Path = Path("contracts/review-platform/v1/openapi.yaml")
     system_profile_id: str
     model_profile_id: str
     dialogue_policy_id: str

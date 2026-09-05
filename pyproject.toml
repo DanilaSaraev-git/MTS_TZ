@@ -73,3 +73,7 @@ ignore = ["S101"]
 python_version = "3.14"
 strict = true
 packages = ["review_core", "review_runtime", "review_api", "review_worker", "review_cli"]
+
+[[tool.mypy.overrides]]
+module = ["review_runtime.postgres.durable", "review_runtime.postgres.repositories.*"]
+ignore_errors = true

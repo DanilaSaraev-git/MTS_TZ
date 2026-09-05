@@ -23,7 +23,7 @@ def test_direct_and_http_core_use_same_deterministic_semantics() -> None:
             "model_profile": {"id": "deterministic-v1", "version": "1.0.0"},
             "locale": "en-US",
         },
-        "channel",
+        "channel-contract",
     )
     report, _ = platform.report(platform.workspace_id, run["id"])
     assert b'"provider":"deterministic"' in report

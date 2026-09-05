@@ -47,16 +47,27 @@ async def test_dialogue_turn_replay_decision_cas_and_report_immutability() -> No
         dialogue = (await client.get(base + "/dialogue")).json()
         assert dialogue["turn_count"] == 0
         body = {"message": "Propose a testable retry rule.", "expected_revision": 0}
-        turn = await client.post(base + "/dialogue/turns", headers={"Idempotency-Key": "turn-1"}, json=body)
-        replay = await client.post(base + "/dialogue/turns", headers={"Idempotency-Key": "turn-1"}, json=body)
+        turn = await client.post(
+            base + "/dialogue/turns", headers={"Idempotency-Key": "turn-key-1"}, json=body
+        )
+        replay = await client.post(
+            base + "/dialogue/turns", headers={"Idempotency-Key": "turn-key-1"}, json=body
+        )
         assert turn.status_code == replay.status_code == 202
+        assert turn.headers["location"] == base + "/dialogue"
+        assert replay.headers["location"] == turn.headers["location"]
         assert turn.json()["turns"][0]["id"] == replay.json()["turns"][0]["id"]
         changed = await client.post(
             base + "/dialogue/turns",
-            headers={"Idempotency-Key": "turn-1"},
+            headers={"Idempotency-Key": "turn-key-1"},
             json=body | {"message": "Different"},
         )
         assert changed.status_code == 409
+        short_key = await client.post(
+            base + "/dialogue/turns", headers={"Idempotency-Key": "short"}, json=body
+        )
+        assert short_key.status_code == 400
+        assert short_key.json()["code"] == "invalid_idempotency_key"
         decision = await client.put(
             base + "/decision",
             json={

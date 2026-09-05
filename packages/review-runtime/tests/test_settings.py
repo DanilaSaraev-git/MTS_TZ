@@ -34,6 +34,8 @@ def test_operator_settings_accept_exact_configured_context(tmp_path: Path) -> No
         database_url="postgresql+psycopg://review:review@postgres/review",
         queue_database_url="postgresql://review:review@postgres/review",
         runtime_config_path=ROOT / "specs/003-backend-implementation/contracts/runtime-config.v1.schema.json",
+        expected_output_path=ROOT
+        / "tests/fixtures/synthetic-review/trusted-fixture-expected-output.v1.json",
         system_profile_id="50000000-0000-4000-8000-000000000001",
         model_profile_id="deterministic-v1",
         dialogue_policy_id="default-dialogue",
@@ -42,3 +44,4 @@ def test_operator_settings_accept_exact_configured_context(tmp_path: Path) -> No
     )
     assert settings.workspace_id.version == 4
     assert settings.artifact_root == tmp_path
+    assert settings.expected_output_path.name == "trusted-fixture-expected-output.v1.json"

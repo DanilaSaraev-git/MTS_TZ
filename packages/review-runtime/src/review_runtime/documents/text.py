@@ -25,7 +25,7 @@ class TextDocumentParser:
             ordinal = len(fragments) + 1
             fragments.append(
                 {
-                    "id": f"{source_id}-fragment-{ordinal}",
+                    "id": f"{document_id}:{source_id}:fragment:{ordinal}",
                     "source_id": source_id,
                     "document_id": document_id,
                     "ordinal": ordinal,

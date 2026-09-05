@@ -12,8 +12,8 @@ def test_initial_migration_has_upgrade_downgrade_and_immutable_guards() -> None:
     migrations = root / "packages/review-runtime/migrations/versions"
     migration = (migrations / "20260905_0001_initial_durable_review_platform_schema.py").read_text()
     assert "Base.metadata" not in migration
-    assert "op.create_table('review_runs'" in migration
-    assert "op.drop_table('review_runs')" in migration
+    assert '"review_runs",' in migration
+    assert 'op.drop_table("review_runs")' in migration
     assert "BEFORE UPDATE OR DELETE" in migration
     assert "reject_immutable_row_mutation" in migration
     assert "review_reports" in migration
@@ -30,7 +30,7 @@ def test_real_empty_upgrade_downgrade_current_head_and_immutability(monkeypatch)
     root = Path(__file__).parents[2]
     url = os.environ.get(
         "REVIEW_TEST_DATABASE_URL",
-        "postgresql+psycopg://v.enbaev@127.0.0.1:55439/review",
+        "postgresql+psycopg://review:review-local-only@127.0.0.1:55440/review",
     )
     dsn = url.replace("postgresql+psycopg://", "postgresql://", 1)
     try:
@@ -50,7 +50,7 @@ def test_real_empty_upgrade_downgrade_current_head_and_immutability(monkeypatch)
             "INSERT INTO deployments(id, release_version, created_at) VALUES(%s, %s, now())",
             ("60000000-0000-4000-8000-000000000099", "test"),
         )
-        with pytest.raises(psycopg.errors.RaiseException):
+        with pytest.raises(psycopg.errors.IntegrityConstraintViolation):
             connection.execute(
                 "UPDATE deployments SET release_version = 'changed' WHERE id = %s",
                 ("60000000-0000-4000-8000-000000000099",),

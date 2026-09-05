@@ -40,7 +40,7 @@ async def test_fixture_flow_requires_exact_digest_not_marker_text(monkeypatch) -
         for index, document_id in enumerate(ids):
             run = await client.post(
                 f"/v1/workspaces/{workspace}/review-runs",
-                headers={"Idempotency-Key": f"run-{index}"},
+                headers={"Idempotency-Key": f"run-key-{index}"},
                 json={
                     "document_id": document_id,
                     "context_document_ids": [],

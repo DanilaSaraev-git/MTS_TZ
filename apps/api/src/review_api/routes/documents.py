@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, File, Query, Request, UploadFile
 from fastapi.responses import Response
 from review_core.canonical import strong_etag
@@ -8,7 +10,7 @@ router = APIRouter(prefix="/v1/workspaces/{workspace_id}")
 @router.get("/documents")
 def list_documents(
     request: Request, workspace_id: str, cursor: str | None = None, limit: int = Query(20, ge=1, le=100)
-):  # type: ignore[no-untyped-def]
+) -> Any:
     return request.app.state.platform.list_documents(workspace_id, cursor, limit)
 
 

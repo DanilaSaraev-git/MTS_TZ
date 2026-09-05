@@ -89,6 +89,19 @@ class PosixArtifactStore:
             raise ValueError("stored artifact digest mismatch")
         return data
 
+    def delete(self, key: str) -> None:
+        path = self._path(key)
+        path.unlink(missing_ok=True)
+        self._fsync_directory(path.parent)
+
+    def probe_writable(self) -> bool:
+        staged = self.stage("health", b"review-platform-ready")
+        try:
+            return staged.path.read_bytes() == b"review-platform-ready"
+        finally:
+            staged.path.unlink(missing_ok=True)
+            self._fsync_directory(self.staging)
+
     def collect_staging(self, *, older_than_seconds: float) -> list[str]:
         threshold = time.time() - older_than_seconds
         removed = []

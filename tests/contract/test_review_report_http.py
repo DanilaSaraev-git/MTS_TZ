@@ -32,7 +32,7 @@ async def _run(client: AsyncClient, fixture: str, key: str) -> tuple[str, str]:
 
 
 async def test_trusted_report_has_finding_and_stable_exact_etag(client: AsyncClient) -> None:
-    workspace, run_id = await _run(client, "synthetic-spec.md", "trusted")
+    workspace, run_id = await _run(client, "synthetic-spec.md", "trusted-report")
     first = await client.get(f"/v1/workspaces/{workspace}/review-runs/{run_id}/report")
     second = await client.get(f"/v1/workspaces/{workspace}/review-runs/{run_id}/report")
     assert first.status_code == 200
